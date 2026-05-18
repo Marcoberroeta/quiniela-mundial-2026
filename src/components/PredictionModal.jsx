@@ -50,7 +50,8 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
   const lockTime = match?.fase === 'grupos'
     ? WORLD_CUP_START
     : new Date(kickoff.getTime() - 15 * 60 * 1000);
-  const isLocked = new Date() >= lockTime;
+  // Locked if time passed OR if prediction already submitted (no edits allowed)
+  const isLocked = new Date() >= lockTime || !!prediction;
   const flag = (team) => TEAM_FLAGS[team] || '🏳️';
 
   useEffect(() => {
@@ -96,9 +97,11 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
           <div className="text-center py-8">
             <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground">
-              {match?.fase === 'grupos'
-                ? 'Los pronósticos de fase de grupos se cerraron 1 día antes del inicio del Mundial.'
-                : 'El pronóstico se bloqueó 15 minutos antes del kickoff.'}
+              {prediction
+                ? 'Ya enviaste tu pronóstico. No se pueden hacer modificaciones.'
+                : match?.fase === 'grupos'
+                  ? 'Los pronósticos de fase de grupos se cerraron 1 día antes del inicio del Mundial.'
+                  : 'El pronóstico se bloqueó 15 minutos antes del kickoff.'}
             </p>
             {prediction && (
               <div className="mt-4 p-4 bg-muted rounded-lg">
