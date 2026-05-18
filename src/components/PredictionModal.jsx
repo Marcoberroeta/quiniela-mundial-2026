@@ -1,0 +1,168 @@
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { TEAM_FLAGS } from '@/lib/matchData';
+import { Minus, Plus, Lock, Save } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+function GoalStepper({ value, onChange, label }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <span className="text-sm font-medium text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-full"
+          onClick={() => onChange(Math.max(0, value - 1))}
+          disabled={value <= 0}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <span className="text-3xl font-bold w-10 text-center">{value}</span>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-full"
+          onClick={() => onChange(Math.min(10, value + 1))}
+          disabled={value >= 10}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default function PredictionModal({ match, prediction, open, onClose, onSave, saving }) {
+  const [golLocal, setGolLocal] = useState(0);
+  const [golVisitante, setGolVisitante] = useState(0);
+  const [ganadorElim, setGanadorElim] = useState(null);
+
+  const isKnockout = match?.fase !== 'grupos';
+  const kickoff = match ? new Date(match.fecha_kickoff) : new Date();
+  const lockTime = new Date(kickoff.getTime() - 15 * 60 * 1000);
+  const isLocked = new Date() >= lockTime;
+  const flag = (team) => TEAM_FLAGS[team] || '🏳️';
+
+  useEffect(() => {
+    if (prediction) {
+      setGolLocal(prediction.gol_local_pred ?? 0);
+      setGolVisitante(prediction.gol_visitante_pred ?? 0);
+      setGanadorElim(prediction.ganador_eliminacion_pred || null);
+    } else {
+      setGolLocal(0);
+      setGolVisitante(0);
+      setGanadorElim(null);
+    }
+  }, [prediction, match]);
+
+  if (!match) return null;
+
+  const handleSave = () => {
+    onSave({
+      gol_local_pred: golLocal,
+      gol_visitante_pred: golVisitante,
+      ganador_eliminacion_pred: isKnockout && golLocal === golVisitante ? ganadorElim : null
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md mx-auto">
+        <DialogHeader>
+          <DialogTitle className="text-center text-lg">
+            {isLocked ? '🔒 Pronóstico bloqueado' : '⚽ Mi pronóstico'}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Match info */}
+        <div className="text-center mb-2">
+          <p className="text-xs text-muted-foreground">
+            {format(kickoff, "EEEE d 'de' MMMM, HH:mm", { locale: es })}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{match.estadio}, {match.ciudad}</p>
+        </div>
+
+        {isLocked ? (
+          <div className="text-center py-8">
+            <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">
+              El pronóstico se bloqueó 15 minutos antes del kickoff.
+            </p>
+            {prediction && (
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">Tu pronóstico:</p>
+                <p className="text-2xl font-bold mt-1">
+                  {prediction.gol_local_pred} - {prediction.gol_visitante_pred}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Goal steppers */}
+            <div className="flex items-center justify-center gap-6">
+              <div className="text-center">
+                <div className="text-3xl mb-1">{flag(match.equipo_local)}</div>
+                <p className="text-xs font-medium mb-3">{match.equipo_local}</p>
+                <GoalStepper value={golLocal} onChange={setGolLocal} label="Goles" />
+              </div>
+
+              <div className="text-2xl font-bold text-muted-foreground pt-8">vs</div>
+
+              <div className="text-center">
+                <div className="text-3xl mb-1">{flag(match.equipo_visitante)}</div>
+                <p className="text-xs font-medium mb-3">{match.equipo_visitante}</p>
+                <GoalStepper value={golVisitante} onChange={setGolVisitante} label="Goles" />
+              </div>
+            </div>
+
+            {/* Knockout tie-breaker */}
+            {isKnockout && golLocal === golVisitante && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <Label className="text-sm font-medium mb-3 block text-center">
+                  ¿Quién avanza en penales?
+                </Label>
+                <RadioGroup
+                  value={ganadorElim || ''}
+                  onValueChange={setGanadorElim}
+                  className="flex justify-center gap-6"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="local" id="local" />
+                    <Label htmlFor="local" className="text-sm cursor-pointer">
+                      {flag(match.equipo_local)} {match.equipo_local}
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="visitante" id="visitante" />
+                    <Label htmlFor="visitante" className="text-sm cursor-pointer">
+                      {flag(match.equipo_visitante)} {match.equipo_visitante}
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isLocked && (
+          <DialogFooter>
+            <Button
+              onClick={handleSave}
+              disabled={saving || (isKnockout && golLocal === golVisitante && !ganadorElim)}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? 'Guardando...' : 'Guardar pronóstico'}
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

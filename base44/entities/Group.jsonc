@@ -1,0 +1,44 @@
+{
+  "name": "Group",
+  "type": "object",
+  "properties": {
+    "nombre": {
+      "type": "string",
+      "description": "Nombre del grupo"
+    },
+    "codigo_invitacion": {
+      "type": "string",
+      "description": "C\u00f3digo de 6 caracteres alfanum\u00e9ricos \u00fanico para invitaci\u00f3n"
+    },
+    "reglas_puntos": {
+      "type": "object",
+      "description": "Reglas de puntos configurables",
+      "properties": {
+        "marcador_exacto": {
+          "type": "number",
+          "default": 5
+        },
+        "signo_diferencia": {
+          "type": "number",
+          "default": 3
+        },
+        "solo_signo": {
+          "type": "number",
+          "default": 2
+        },
+        "sin_acierto": {
+          "type": "number",
+          "default": 0
+        },
+        "bonus_eliminacion": {
+          "type": "number",
+          "default": 1
+        }
+      }
+    }
+  },
+  "required": [
+    "nombre",
+    "codigo_invitacion"
+  ]
+}

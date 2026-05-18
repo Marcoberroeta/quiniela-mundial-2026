@@ -5,7 +5,13 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-// Add page imports here
+import Home from './pages/Home';
+import CreateGroup from './pages/CreateGroup';
+import JoinGroup from './pages/JoinGroup';
+import GroupView from './pages/GroupView';
+import MatchDetail from './pages/MatchDetail';
+import Admin from './pages/Admin';
+import AppShell from './components/AppShell';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -33,7 +39,16 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route element={<AppShell />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/groups" element={<Home />} />
+        <Route path="/create-group" element={<CreateGroup />} />
+        <Route path="/join" element={<JoinGroup />} />
+        <Route path="/join/:code" element={<JoinGroup />} />
+        <Route path="/group/:groupId" element={<GroupView />} />
+        <Route path="/match/:matchId" element={<MatchDetail />} />
+        <Route path="/admin" element={<Admin />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

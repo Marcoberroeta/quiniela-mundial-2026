@@ -1,0 +1,31 @@
+{
+  "name": "GroupMember",
+  "type": "object",
+  "properties": {
+    "group_id": {
+      "type": "string",
+      "description": "ID del grupo"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario"
+    },
+    "user_nombre": {
+      "type": "string",
+      "description": "Nombre del usuario (cache)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email del usuario (cache)"
+    },
+    "puntos_totales": {
+      "type": "number",
+      "default": 0,
+      "description": "Suma de puntos obtenidos en el grupo"
+    }
+  },
+  "required": [
+    "group_id",
+    "user_id"
+  ]
+}

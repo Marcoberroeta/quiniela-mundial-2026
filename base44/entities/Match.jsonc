@@ -1,0 +1,89 @@
+{
+  "name": "Match",
+  "type": "object",
+  "properties": {
+    "match_number": {
+      "type": "number",
+      "description": "N\u00famero de partido (1-104)"
+    },
+    "fecha_kickoff": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora UTC del kickoff"
+    },
+    "equipo_local": {
+      "type": "string",
+      "description": "Nombre del equipo local"
+    },
+    "equipo_visitante": {
+      "type": "string",
+      "description": "Nombre del equipo visitante"
+    },
+    "codigo_local": {
+      "type": "string",
+      "description": "C\u00f3digo ISO del equipo local (para bandera)"
+    },
+    "codigo_visitante": {
+      "type": "string",
+      "description": "C\u00f3digo ISO del equipo visitante (para bandera)"
+    },
+    "fase": {
+      "type": "string",
+      "enum": [
+        "grupos",
+        "ronda_32",
+        "octavos",
+        "cuartos",
+        "semis",
+        "tercer_lugar",
+        "final"
+      ],
+      "description": "Fase del torneo"
+    },
+    "grupo_letra": {
+      "type": "string",
+      "description": "Letra del grupo (A-L, solo fase de grupos)"
+    },
+    "estadio": {
+      "type": "string",
+      "description": "Nombre del estadio"
+    },
+    "ciudad": {
+      "type": "string",
+      "description": "Ciudad del estadio"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "programado",
+        "en_vivo",
+        "finalizado"
+      ],
+      "default": "programado",
+      "description": "Estado del partido"
+    },
+    "gol_local": {
+      "type": "number",
+      "description": "Goles del equipo local"
+    },
+    "gol_visitante": {
+      "type": "number",
+      "description": "Goles del equipo visitante"
+    },
+    "ganador_penales": {
+      "type": "string",
+      "enum": [
+        "local",
+        "visitante"
+      ],
+      "description": "Ganador en penales (solo eliminaci\u00f3n)"
+    }
+  },
+  "required": [
+    "fecha_kickoff",
+    "equipo_local",
+    "equipo_visitante",
+    "fase",
+    "estado"
+  ]
+}

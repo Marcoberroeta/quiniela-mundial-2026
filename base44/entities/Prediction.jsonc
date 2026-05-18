@@ -1,0 +1,44 @@
+{
+  "name": "Prediction",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario"
+    },
+    "group_id": {
+      "type": "string",
+      "description": "ID del grupo"
+    },
+    "match_id": {
+      "type": "string",
+      "description": "ID del partido"
+    },
+    "gol_local_pred": {
+      "type": "number",
+      "description": "Goles pronosticados equipo local"
+    },
+    "gol_visitante_pred": {
+      "type": "number",
+      "description": "Goles pronosticados equipo visitante"
+    },
+    "ganador_eliminacion_pred": {
+      "type": "string",
+      "enum": [
+        "local",
+        "visitante"
+      ],
+      "description": "Qui\u00e9n avanza en eliminaci\u00f3n (si empate)"
+    },
+    "puntos_obtenidos": {
+      "type": "number",
+      "default": 0,
+      "description": "Puntos obtenidos (calculado al finalizar partido)"
+    }
+  },
+  "required": [
+    "user_id",
+    "group_id",
+    "match_id"
+  ]
+}
