@@ -12,6 +12,7 @@ import GroupView from './pages/GroupView';
 import MatchDetail from './pages/MatchDetail';
 import Admin from './pages/Admin';
 import Fixture from './pages/Fixture';
+import GlobalLeaderboard from './pages/GlobalLeaderboard';
 import AppShell from './components/AppShell';
 
 const AuthenticatedApp = () => {
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
         <Route path="/match/:matchId" element={<MatchDetail />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/fixture" element={<Fixture />} />
+        <Route path="/ranking" element={<GlobalLeaderboard />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
