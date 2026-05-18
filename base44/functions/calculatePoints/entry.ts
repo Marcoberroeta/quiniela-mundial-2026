@@ -1,5 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+// Phase multipliers
+const PHASE_MULTIPLIERS = {
+  grupos:        1,
+  ronda_32:      1,
+  octavos:       2,
+  cuartos:       2,
+  semis:         3,
+  tercer_lugar:  3,
+  final:         4,
+};
+
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
@@ -8,80 +19,55 @@ Deno.serve(async (req) => {
   }
 
   const { match_id } = await req.json();
-  
-  // Get the match
+
   const matches = await base44.asServiceRole.entities.Match.filter({ id: match_id });
   if (!matches.length) {
     return Response.json({ error: 'Match not found' }, { status: 404 });
   }
   const match = matches[0];
-  
+
   if (match.estado !== 'finalizado') {
     return Response.json({ error: 'Match not finished yet' }, { status: 400 });
   }
 
-  // Get all predictions for this match
   const predictions = await base44.asServiceRole.entities.Prediction.filter({ match_id: match.id });
-  
-  const isKnockout = match.fase !== 'grupos';
-  
-  for (const pred of predictions) {
-    // Get group rules
-    const groups = await base44.asServiceRole.entities.Group.filter({ id: pred.group_id });
-    if (!groups.length) continue;
-    const reglas = groups[0].reglas_puntos || {
-      marcador_exacto: 5,
-      signo_diferencia: 3,
-      solo_signo: 2,
-      sin_acierto: 0,
-      bonus_eliminacion: 1
-    };
+  const multiplier = PHASE_MULTIPLIERS[match.fase] || 1;
 
-    let puntos = 0;
+  for (const pred of predictions) {
     const gl = match.gol_local;
     const gv = match.gol_visitante;
     const pl = pred.gol_local_pred;
     const pv = pred.gol_visitante_pred;
 
-    if (pl === gl && pv === gv) {
-      // Exact score
-      puntos = reglas.marcador_exacto;
+    const realSign = Math.sign(gl - gv);
+    const predSign = Math.sign(pl - pv);
+
+    let puntos = 0;
+
+    if (realSign === predSign) {
+      // Winner (or draw) correct: 12 pts base, minus 1 pt per goal difference between prediction and result
+      const BASE = 12;
+      const predDiff = Math.abs((pl - pv) - (gl - gv));  // goal difference error
+      const scoreDiff = Math.abs(pl - gl) + Math.abs(pv - gv); // total goal error
+      // Penalty: 1 pt per goal of total difference, minimum 1 pt
+      const penalty = scoreDiff;
+      puntos = Math.max(1, BASE - penalty);
     } else {
-      const realSign = Math.sign(gl - gv);
-      const predSign = Math.sign(pl - pv);
-      
-      if (realSign === predSign) {
-        const realDiff = gl - gv;
-        const predDiff = pl - pv;
-        if (realDiff === predDiff) {
-          // Correct sign + exact goal difference
-          puntos = reglas.signo_diferencia;
-        } else {
-          // Only correct sign
-          puntos = reglas.solo_signo;
-        }
-      } else {
-        puntos = reglas.sin_acierto;
-      }
+      // Wrong winner = 0 pts
+      puntos = 0;
     }
 
-    // Knockout bonus
-    if (isKnockout && match.ganador_penales && pred.ganador_eliminacion_pred) {
-      if (pred.ganador_eliminacion_pred === match.ganador_penales) {
-        puntos += reglas.bonus_eliminacion;
-      }
-    }
+    // Apply phase multiplier
+    puntos = puntos * multiplier;
 
-    // Update prediction points
     await base44.asServiceRole.entities.Prediction.update(pred.id, { puntos_obtenidos: puntos });
 
-    // Update group member total points
+    // Recalculate member total
     const members = await base44.asServiceRole.entities.GroupMember.filter({
       group_id: pred.group_id,
       user_id: pred.user_id
     });
     if (members.length) {
-      // Recalculate total from all predictions
       const allPreds = await base44.asServiceRole.entities.Prediction.filter({
         group_id: pred.group_id,
         user_id: pred.user_id

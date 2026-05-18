@@ -10,12 +10,14 @@ import { base44 } from '@/api/base44Client';
 import { generateInviteCode } from '@/lib/matchData';
 import { toast } from 'sonner';
 
+// New scoring: 12 pts base for correct winner, -1 per goal diff, multiplied by phase
+// These legacy fields are kept for DB compatibility but calculatePoints now uses fixed logic
 const DEFAULT_RULES = {
-  marcador_exacto: 5,
-  signo_diferencia: 3,
-  solo_signo: 2,
+  marcador_exacto: 12,
+  signo_diferencia: 12,
+  solo_signo: 12,
   sin_acierto: 0,
-  bonus_eliminacion: 1,
+  bonus_eliminacion: 0,
 };
 
 const RULE_LABELS = {
