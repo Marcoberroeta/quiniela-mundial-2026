@@ -44,7 +44,12 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
 
   const isKnockout = match?.fase !== 'grupos';
   const kickoff = match ? new Date(match.fecha_kickoff) : new Date();
-  const lockTime = new Date(kickoff.getTime() - 15 * 60 * 1000);
+  // Fase de grupos: bloqueo 1 día antes del inicio del mundial (10 jun 2026 23:59 CDM = 11 jun 05:59 UTC)
+  // Eliminatorias: bloqueo 15 min antes del kickoff del partido
+  const WORLD_CUP_START = new Date('2026-06-11T05:59:00Z');
+  const lockTime = match?.fase === 'grupos'
+    ? WORLD_CUP_START
+    : new Date(kickoff.getTime() - 15 * 60 * 1000);
   const isLocked = new Date() >= lockTime;
   const flag = (team) => TEAM_FLAGS[team] || '🏳️';
 
@@ -91,7 +96,9 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
           <div className="text-center py-8">
             <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground">
-              El pronóstico se bloqueó 15 minutos antes del kickoff.
+              {match?.fase === 'grupos'
+                ? 'Los pronósticos de fase de grupos se cerraron 1 día antes del inicio del Mundial.'
+                : 'El pronóstico se bloqueó 15 minutos antes del kickoff.'}
             </p>
             {prediction && (
               <div className="mt-4 p-4 bg-muted rounded-lg">
