@@ -11,6 +11,7 @@ import JoinGroup from './pages/JoinGroup';
 import GroupView from './pages/GroupView';
 import MatchDetail from './pages/MatchDetail';
 import Admin from './pages/Admin';
+import Fixture from './pages/Fixture';
 import AppShell from './components/AppShell';
 
 const AuthenticatedApp = () => {
@@ -48,6 +49,7 @@ const AuthenticatedApp = () => {
         <Route path="/group/:groupId" element={<GroupView />} />
         <Route path="/match/:matchId" element={<MatchDetail />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/fixture" element={<Fixture />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
