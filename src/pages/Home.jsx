@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Users, Plus, ArrowRight, Settings } from 'lucide-react';
+import { Trophy, Users, Plus, ArrowRight, Settings, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import MatchCard from '@/components/MatchCard';
+import PredictionModal from '@/components/PredictionModal';
+import { toast } from 'sonner';
 
 export default function Home() {
   const { data: user } = useQuery({
@@ -31,6 +34,55 @@ export default function Home() {
   });
 
   const getMembershipForGroup = (groupId) => memberships.find(m => m.group_id === groupId);
+
+  // Primary group (first one the user belongs to, for predictions)
+  const primaryGroupId = memberships[0]?.group_id || null;
+
+  // Upcoming matches (next 5)
+  const { data: allMatches = [] } = useQuery({
+    queryKey: ['matches-upcoming'],
+    queryFn: () => base44.entities.Match.filter({ estado: 'programado' }, 'fecha_kickoff', 10),
+  });
+
+  // Predictions for primary group
+  const { data: myPredictions = [] } = useQuery({
+    queryKey: ['predictions-home', user?.id, primaryGroupId],
+    queryFn: () => base44.entities.Prediction.filter({ user_id: user?.id, group_id: primaryGroupId }),
+    enabled: !!user?.id && !!primaryGroupId,
+  });
+
+  const queryClient = useQueryClient();
+  const [selectedMatch, setSelectedMatch] = useState(null);
+
+  const savePrediction = useMutation({
+    mutationFn: async ({ matchId, data }) => {
+      const existing = myPredictions.find(p => p.match_id === matchId);
+      if (existing) {
+        return base44.entities.Prediction.update(existing.id, data);
+      }
+      return base44.entities.Prediction.create({
+        ...data,
+        user_id: user.id,
+        group_id: primaryGroupId,
+        match_id: matchId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['predictions-home'] });
+      setSelectedMatch(null);
+      toast.success('Pronóstico guardado');
+    },
+  });
+
+  const upcomingMatches = useMemo(() => {
+    const now = new Date();
+    return allMatches
+      .filter(m => new Date(m.fecha_kickoff) > now)
+      .sort((a, b) => new Date(a.fecha_kickoff) - new Date(b.fecha_kickoff))
+      .slice(0, 6);
+  }, [allMatches]);
+
+  const getPrediction = (matchId) => myPredictions.find(p => p.match_id === matchId);
 
   return (
     <div className="p-4">
@@ -77,6 +129,28 @@ export default function Home() {
           </Card>
         </Link>
       </div>
+
+      {/* Upcoming Matches */}
+      {upcomingMatches.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold">Próximos partidos</h2>
+            {!primaryGroupId && (
+              <span className="text-xs text-muted-foreground">Únete a un grupo para pronosticar</span>
+            )}
+          </div>
+          <div className="space-y-3">
+            {upcomingMatches.map((match) => (
+              <MatchCard
+                key={match.id}
+                match={match}
+                prediction={getPrediction(match.id)}
+                onClick={primaryGroupId ? setSelectedMatch : undefined}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* My Groups */}
       <h2 className="text-lg font-bold mb-3">Mis grupos</h2>
@@ -125,6 +199,15 @@ export default function Home() {
           })}
         </div>
       )}
+      {/* Prediction Modal */}
+      <PredictionModal
+        match={selectedMatch}
+        prediction={selectedMatch ? getPrediction(selectedMatch.id) : null}
+        open={!!selectedMatch}
+        onClose={() => setSelectedMatch(null)}
+        onSave={(data) => savePrediction.mutate({ matchId: selectedMatch.id, data })}
+        saving={savePrediction.isPending}
+      />
     </div>
   );
 }
