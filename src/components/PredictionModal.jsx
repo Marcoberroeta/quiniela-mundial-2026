@@ -1,37 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { TEAM_FLAGS } from '@/lib/matchData';
-import { Minus, Plus, Lock, Save, AlertCircle } from 'lucide-react';
+import { Minus, Plus, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+const INK = '#14130f';
+const CONCRETE = '#e4e1d8';
+const RED = '#E2001A';
+const GREEN = '#00923F';
+const YELLOW = '#FFC20E';
+
 function GoalStepper({ value, onChange, label }) {
+  const [punching, setPunching] = useState(false);
+  const [ghost, setGhost] = useState(null);
+
+  const handleChange = (dir) => {
+    const next = value + dir;
+    if (next < 0 || next > 10) return;
+    onChange(next);
+    setPunching(true);
+    setGhost({ dir, key: Date.now() });
+    setTimeout(() => setPunching(false), 200);
+  };
+
   return (
-    <div className="flex flex-col items-center gap-2">
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 rounded-full"
-          onClick={() => onChange(Math.max(0, value - 1))}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9b968a' }}>
+        {label}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: `2px solid ${INK}` }}>
+        <button
+          onClick={() => handleChange(-1)}
           disabled={value <= 0}
+          style={{
+            width: 40, height: 48,
+            border: 'none',
+            borderRight: `2px solid ${INK}`,
+            background: value <= 0 ? '#c7c3b8' : CONCRETE,
+            cursor: value <= 0 ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 700, fontSize: 20, color: value <= 0 ? '#9b968a' : INK,
+          }}
         >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <span className="text-3xl font-bold w-10 text-center">{value}</span>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 rounded-full"
-          onClick={() => onChange(Math.min(10, value + 1))}
+          −
+        </button>
+        <div
+          style={{
+            width: 56, height: 48,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', overflow: 'visible',
+          }}
+        >
+          <span
+            className={punching ? 'animate-punch' : ''}
+            style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.04em', color: INK }}
+          >
+            {value}
+          </span>
+          {ghost && (
+            <span
+              key={ghost.key}
+              className="animate-ghost"
+              style={{
+                position: 'absolute',
+                top: 4, left: '50%',
+                fontSize: 14, fontWeight: 700,
+                color: ghost.dir > 0 ? GREEN : RED,
+                pointerEvents: 'none',
+              }}
+            >
+              {ghost.dir > 0 ? '+1' : '−1'}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => handleChange(1)}
           disabled={value >= 10}
+          style={{
+            width: 40, height: 48,
+            border: 'none',
+            borderLeft: `2px solid ${INK}`,
+            background: value >= 10 ? '#c7c3b8' : CONCRETE,
+            cursor: value >= 10 ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 700, fontSize: 20, color: value >= 10 ? '#9b968a' : INK,
+          }}
         >
-          <Plus className="h-4 w-4" />
-        </Button>
+          +
+        </button>
       </div>
     </div>
   );
@@ -42,16 +101,14 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
   const [golVisitante, setGolVisitante] = useState(0);
   const [ganadorElim, setGanadorElim] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pegado, setPegado] = useState(false);
 
   const isKnockout = match?.fase !== 'grupos';
   const kickoff = match ? new Date(match.fecha_kickoff) : new Date();
-  // Fase de grupos: bloqueo 1 día antes del inicio del mundial (10 jun 2026 23:59 CDM = 11 jun 05:59 UTC)
-  // Eliminatorias: bloqueo 15 min antes del kickoff del partido
   const WORLD_CUP_START = new Date('2026-06-11T05:59:00Z');
   const lockTime = match?.fase === 'grupos'
     ? WORLD_CUP_START
     : new Date(kickoff.getTime() - 15 * 60 * 1000);
-  // Locked if time passed OR if prediction already submitted (no edits allowed)
   const isLocked = new Date() >= lockTime || !!prediction;
   const flag = (team) => TEAM_FLAGS[team] || '🏳️';
 
@@ -65,164 +122,274 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
       setGolVisitante(0);
       setGanadorElim(null);
     }
+    setPegado(false);
+    setShowConfirmation(false);
   }, [prediction, match]);
 
   if (!match) return null;
 
-  const handleSaveClick = () => {
-    setShowConfirmation(true);
-  };
+  const handleSaveClick = () => setShowConfirmation(true);
 
   const handleConfirmSave = () => {
     onSave({
       gol_local_pred: golLocal,
       gol_visitante_pred: golVisitante,
-      ganador_eliminacion_pred: isKnockout && golLocal === golVisitante ? ganadorElim : null
+      ganador_eliminacion_pred: isKnockout && golLocal === golVisitante ? ganadorElim : null,
     });
+    setPegado(true);
     setShowConfirmation(false);
-  };
-
-  const handleCancelConfirmation = () => {
-    setShowConfirmation(false);
+    setTimeout(() => {
+      setPegado(false);
+      onClose();
+    }, 1400);
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto">
-        <DialogHeader>
-          <DialogTitle className="text-center text-lg">
-            {isLocked ? '🔒 Pronóstico bloqueado' : '⚽ Mi pronóstico'}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent
+        className="max-w-sm mx-auto p-0 overflow-hidden"
+        style={{
+          borderRadius: 0,
+          border: `3px solid ${INK}`,
+          boxShadow: `5px 5px 0 ${INK}`,
+          background: CONCRETE,
+          fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+        }}
+      >
+        {/* PEGADO stamp overlay */}
+        {pegado && (
+          <div
+            style={{
+              position: 'absolute', inset: 0, zIndex: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(20,19,15,0.55)',
+              pointerEvents: 'none',
+            }}
+          >
+            <div
+              className="animate-slam"
+              style={{
+                background: GREEN,
+                color: '#fff',
+                border: `4px solid ${INK}`,
+                padding: '12px 28px',
+                fontSize: 36,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                boxShadow: `4px 4px 0 ${INK}`,
+                transformOrigin: 'center',
+              }}
+            >
+              PEGADO
+            </div>
+          </div>
+        )}
 
-        {/* Match info */}
-        <div className="text-center mb-2">
-          <p className="text-xs text-muted-foreground">
-            {format(kickoff, "EEEE d 'de' MMMM, HH:mm", { locale: es })}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{match.estadio}, {match.ciudad}</p>
+        {/* Header strip */}
+        <div
+          style={{
+            background: INK,
+            color: CONCRETE,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+            {isLocked ? '🔒 Bloqueado' : '⚽ Mi pronóstico'}
+          </span>
+          <span style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.1em' }}>
+            {format(kickoff, 'dd MMM · HH:mm', { locale: es })}
+          </span>
         </div>
 
-        {showConfirmation ? (
-          <div className="space-y-4">
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <div className="flex gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div className="space-y-2">
-                  <p className="font-semibold text-sm text-yellow-900 dark:text-yellow-100">
-                    ⚠️ Pronóstico irreversible
-                  </p>
-                  <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                    Una vez que guardes tu pronóstico, <strong>no podrás editarlo más</strong>. 
-                    Verifica que {golLocal} - {golVisitante} 
-                    {isKnockout && golLocal === golVisitante ? ` (${ganadorElim === 'local' ? match.equipo_local : match.equipo_visitante} en penales)` : ''} 
-                    sea tu predicción final.
-                  </p>
-                  <p className="text-xs text-yellow-800 dark:text-yellow-200 mt-2">
-                    {match?.fase === 'grupos'
-                      ? '📅 Los pronósticos de fase de grupos se bloquearán 1 día antes del inicio del Mundial.'
-                      : '⏱️ Este pronóstico se bloqueará 15 minutos antes del kickoff.'}
-                  </p>
-                </div>
-              </div>
-            </div>
+        {/* Match info */}
+        <div style={{ padding: '8px 16px', borderBottom: `2px solid ${INK}`, background: '#d8d5cc', textAlign: 'center' }}>
+          <p style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.08em' }}>
+            {match.estadio}, {match.ciudad}
+          </p>
+        </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={handleCancelConfirmation}
-                className="flex-1"
+        <div style={{ padding: 16 }}>
+          {showConfirmation ? (
+            <div>
+              {/* Warning block */}
+              <div
+                style={{
+                  border: `2px solid ${YELLOW}`,
+                  background: '#fffbe6',
+                  padding: 12,
+                  marginBottom: 16,
+                }}
               >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleConfirmSave}
-                disabled={saving}
-                className="flex-1 bg-primary hover:bg-primary/90"
-              >
-                {saving ? 'Guardando...' : 'Sí, confirmar'}
-              </Button>
-            </div>
-          </div>
-        ) : isLocked ? (
-          <div className="text-center py-8">
-            <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">
-              {prediction
-                ? 'Ya enviaste tu pronóstico. No se pueden hacer modificaciones.'
-                : match?.fase === 'grupos'
-                  ? 'Los pronósticos de fase de grupos se cerraron 1 día antes del inicio del Mundial.'
-                  : 'El pronóstico se bloqueó 15 minutos antes del kickoff.'}
-            </p>
-            {prediction && (
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Tu pronóstico:</p>
-                <p className="text-2xl font-bold mt-1">
-                  {prediction.gol_local_pred} - {prediction.gol_visitante_pred}
+                <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: INK, marginBottom: 6 }}>
+                  ⚠ Pronóstico irreversible
+                </p>
+                <p style={{ fontSize: 11, color: '#5a5540', lineHeight: 1.5 }}>
+                  Una vez guardado <strong>no podrás editar</strong>. Verifica:{' '}
+                  <strong>{golLocal} – {golVisitante}</strong>
+                  {isKnockout && golLocal === golVisitante && ganadorElim
+                    ? ` (${ganadorElim === 'local' ? match.equipo_local : match.equipo_visitante} pen.)`
+                    : ''}.
+                </p>
+                <p style={{ fontSize: 10, color: '#9b968a', marginTop: 6 }}>
+                  {match?.fase === 'grupos'
+                    ? 'Fase de grupos: cierre 1 día antes del inicio del Mundial.'
+                    : 'Eliminatorias: cierre 15 min antes del kickoff.'}
                 </p>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Goal steppers */}
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-center">
-                <div className="text-3xl mb-1">{flag(match.equipo_local)}</div>
-                <p className="text-xs font-medium mb-3">{match.equipo_local}</p>
-                <GoalStepper value={golLocal} onChange={setGolLocal} label="Goles" />
-              </div>
 
-              <div className="text-2xl font-bold text-muted-foreground pt-8">vs</div>
-
-              <div className="text-center">
-                <div className="text-3xl mb-1">{flag(match.equipo_visitante)}</div>
-                <p className="text-xs font-medium mb-3">{match.equipo_visitante}</p>
-                <GoalStepper value={golVisitante} onChange={setGolVisitante} label="Goles" />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setShowConfirmation(false)}
+                  style={{
+                    flex: 1, height: 44,
+                    border: `2px solid ${INK}`,
+                    background: CONCRETE,
+                    color: INK,
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    boxShadow: `3px 3px 0 ${INK}`,
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmSave}
+                  disabled={saving}
+                  style={{
+                    flex: 1, height: 44,
+                    border: `2px solid ${INK}`,
+                    background: GREEN,
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    boxShadow: `3px 3px 0 ${INK}`,
+                    opacity: saving ? 0.6 : 1,
+                  }}
+                >
+                  {saving ? 'Guardando...' : 'Confirmar'}
+                </button>
               </div>
             </div>
-
-            {/* Knockout tie-breaker */}
-            {isKnockout && golLocal === golVisitante && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <Label className="text-sm font-medium mb-3 block text-center">
-                  ¿Quién avanza en penales?
-                </Label>
-                <RadioGroup
-                  value={ganadorElim || ''}
-                  onValueChange={setGanadorElim}
-                  className="flex justify-center gap-6"
+          ) : isLocked ? (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <Lock style={{ width: 32, height: 32, margin: '0 auto 12px', color: '#9b968a' }} />
+              <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.6 }}>
+                {prediction
+                  ? 'Ya enviaste tu pronóstico. No se pueden hacer modificaciones.'
+                  : match?.fase === 'grupos'
+                    ? 'Los pronósticos de fase de grupos se cerraron.'
+                    : 'El pronóstico se bloqueó 15 minutos antes del kickoff.'}
+              </p>
+              {prediction && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    border: `2px solid ${INK}`,
+                    padding: '12px 24px',
+                    background: '#d8d5cc',
+                    display: 'inline-block',
+                  }}
                 >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="local" id="local" />
-                    <Label htmlFor="local" className="text-sm cursor-pointer">
-                      {flag(match.equipo_local)} {match.equipo_local}
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="visitante" id="visitante" />
-                    <Label htmlFor="visitante" className="text-sm cursor-pointer">
-                      {flag(match.equipo_visitante)} {match.equipo_visitante}
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            )}
-          </div>
-        )}
+                  <p style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Tu pronóstico
+                  </p>
+                  <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em', color: INK }}>
+                    {prediction.gol_local_pred} – {prediction.gol_visitante_pred}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              {/* Steppers */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 20 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, marginBottom: 4 }}>{flag(match.equipo_local)}</div>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: INK, marginBottom: 10 }}>
+                    {match.equipo_local}
+                  </p>
+                  <GoalStepper value={golLocal} onChange={setGolLocal} label="Goles" />
+                </div>
 
-        {!isLocked && !showConfirmation && (
-          <DialogFooter>
-            <Button
-              onClick={handleSaveClick}
-              disabled={saving || (isKnockout && golLocal === golVisitante && !ganadorElim)}
-              className="w-full bg-primary hover:bg-primary/90"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? 'Guardando...' : 'Guardar pronóstico'}
-            </Button>
-          </DialogFooter>
-        )}
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#9b968a', paddingTop: 28 }}>vs</div>
+
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, marginBottom: 4 }}>{flag(match.equipo_visitante)}</div>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: INK, marginBottom: 10 }}>
+                    {match.equipo_visitante}
+                  </p>
+                  <GoalStepper value={golVisitante} onChange={setGolVisitante} label="Goles" />
+                </div>
+              </div>
+
+              {/* Knockout tiebreaker */}
+              {isKnockout && golLocal === golVisitante && (
+                <div
+                  style={{
+                    border: `2px solid ${INK}`,
+                    padding: 12,
+                    marginBottom: 16,
+                    background: '#d8d5cc',
+                  }}
+                >
+                  <Label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', display: 'block', textAlign: 'center', marginBottom: 10, color: '#9b968a' }}>
+                    ¿Quién avanza en penales?
+                  </Label>
+                  <RadioGroup
+                    value={ganadorElim || ''}
+                    onValueChange={setGanadorElim}
+                    className="flex justify-center gap-6"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="local" id="local" />
+                      <Label htmlFor="local" style={{ fontSize: 12, cursor: 'pointer' }}>
+                        {flag(match.equipo_local)} {match.equipo_local}
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="visitante" id="visitante" />
+                      <Label htmlFor="visitante" style={{ fontSize: 12, cursor: 'pointer' }}>
+                        {flag(match.equipo_visitante)} {match.equipo_visitante}
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
+              {/* Save button */}
+              <button
+                onClick={handleSaveClick}
+                disabled={saving || (isKnockout && golLocal === golVisitante && !ganadorElim)}
+                style={{
+                  width: '100%',
+                  height: 48,
+                  border: `2px solid ${INK}`,
+                  background: INK,
+                  color: CONCRETE,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  cursor: saving || (isKnockout && golLocal === golVisitante && !ganadorElim) ? 'not-allowed' : 'pointer',
+                  boxShadow: `3px 3px 0 ${INK}`,
+                  opacity: saving || (isKnockout && golLocal === golVisitante && !ganadorElim) ? 0.5 : 1,
+                }}
+              >
+                {saving ? 'Guardando...' : 'Guardar pronóstico'}
+              </button>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,7 +1,5 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, Target } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -10,16 +8,20 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 
+const INK = '#14130f';
+const CONCRETE = '#e4e1d8';
+const RED = '#E2001A';
+const BLUE = '#0E63B3';
+const YELLOW = '#FFC20E';
+const GREEN = '#00923F';
+
 export default function MatchDetail() {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const groupId = urlParams.get('group');
 
-  const { data: user } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => base44.auth.me(),
-  });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
 
   const { data: match, isLoading } = useQuery({
     queryKey: ['match', matchId],
@@ -43,8 +45,12 @@ export default function MatchDetail() {
 
   if (isLoading || !match) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{
+          width: 32, height: 32,
+          border: `3px solid #c7c3b8`, borderTop: `3px solid ${RED}`,
+          borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+        }} />
       </div>
     );
   }
@@ -53,8 +59,8 @@ export default function MatchDetail() {
   const kickoff = new Date(match.fecha_kickoff);
   const isFinished = match.estado === 'finalizado';
   const isStarted = match.estado !== 'programado';
+  const isLive = match.estado === 'en_vivo';
 
-  // Before kickoff, only show current user's prediction
   const getMemberName = (userId) => {
     const member = members.find(m => m.user_id === userId);
     return member?.user_nombre || member?.user_email || 'Jugador';
@@ -65,113 +71,212 @@ export default function MatchDetail() {
     : predictions.filter(p => p.user_id === user?.id);
 
   return (
-    <div className="p-4">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-4 pt-4">
-        <ArrowLeft className="w-4 h-4" /> Volver
-      </button>
+    <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+      {/* Back header */}
+      <div
+        style={{
+          background: INK,
+          padding: '16px',
+          borderBottom: `3px solid ${INK}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9b968a', display: 'flex', alignItems: 'center' }}
+        >
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: CONCRETE }}>
+          Partido
+        </span>
+      </div>
 
-      {/* Match header */}
-      <Card className="p-6 mb-6">
-        <div className="text-center mb-4">
-          <Badge variant="outline" className="text-xs">
-            {match.grupo_letra ? `Grupo ${match.grupo_letra}` : FASE_LABELS[match.fase]}
-          </Badge>
-        </div>
-
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 text-center">
-            <div className="text-4xl mb-2">{flag(match.equipo_local)}</div>
-            <p className="text-sm font-bold">{match.equipo_local}</p>
+      <div style={{ padding: '16px 16px 96px' }}>
+        {/* Match card */}
+        <div
+          style={{
+            border: `3px solid ${INK}`,
+            background: CONCRETE,
+            marginBottom: 20,
+            boxShadow: `5px 5px 0 ${INK}`,
+          }}
+        >
+          {/* Phase badge strip */}
+          <div
+            style={{
+              background: INK,
+              padding: '6px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: YELLOW }}>
+              {match.grupo_letra ? `GRUPO ${match.grupo_letra}` : FASE_LABELS[match.fase]?.toUpperCase() || match.fase?.toUpperCase()}
+            </span>
+            {isLive && (
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', color: RED }}>● EN VIVO</span>
+            )}
+            {isFinished && (
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', color: GREEN }}>✓ FINALIZADO</span>
+            )}
           </div>
 
-          <div className="text-center">
-            {isFinished ? (
-              <div className="flex items-center gap-2">
-                <span className="text-4xl font-bold">{match.gol_local}</span>
-                <span className="text-xl text-muted-foreground">-</span>
-                <span className="text-4xl font-bold">{match.gol_visitante}</span>
-              </div>
-            ) : (
-              <div>
-                <p className="text-xl font-bold text-primary">
-                  {format(kickoff, 'HH:mm')}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {format(kickoff, "d 'de' MMMM", { locale: es })}
-                </p>
-              </div>
-            )}
-            {match.ganador_penales && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Penales: {match.ganador_penales === 'local' ? match.equipo_local : match.equipo_visitante}
+          {/* Teams */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '24px 16px',
+            }}
+          >
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>{flag(match.equipo_local)}</div>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: INK }}>
+                {match.equipo_local}
               </p>
-            )}
+            </div>
+
+            <div style={{ textAlign: 'center', flexShrink: 0 }}>
+              {isFinished ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.06em', color: INK }}>{match.gol_local}</span>
+                  <span style={{ fontSize: 20, color: '#9b968a', fontWeight: 700 }}>–</span>
+                  <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.06em', color: INK }}>{match.gol_visitante}</span>
+                </div>
+              ) : isLive ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.06em', color: RED }}>{match.gol_local ?? 0}</span>
+                  <span style={{ fontSize: 20, color: '#9b968a', fontWeight: 700 }}>–</span>
+                  <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.06em', color: RED }}>{match.gol_visitante ?? 0}</span>
+                </div>
+              ) : (
+                <div>
+                  <p style={{ fontSize: 26, fontWeight: 700, color: BLUE, letterSpacing: '-0.04em' }}>
+                    {format(kickoff, 'HH:mm')}
+                  </p>
+                  <p style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 4 }}>
+                    {format(kickoff, "d 'de' MMMM", { locale: es })}
+                  </p>
+                </div>
+              )}
+              {match.ganador_penales && (
+                <p style={{ fontSize: 9, color: '#9b968a', marginTop: 4, letterSpacing: '0.06em' }}>
+                  Pen: {match.ganador_penales === 'local' ? match.equipo_local : match.equipo_visitante}
+                </p>
+              )}
+            </div>
+
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>{flag(match.equipo_visitante)}</div>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: INK }}>
+                {match.equipo_visitante}
+              </p>
+            </div>
           </div>
 
-          <div className="flex-1 text-center">
-            <div className="text-4xl mb-2">{flag(match.equipo_visitante)}</div>
-            <p className="text-sm font-bold">{match.equipo_visitante}</p>
+          {/* Venue */}
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              padding: '8px 14px', borderTop: `2px solid #c7c3b8`,
+            }}
+          >
+            <MapPin style={{ width: 10, height: 10, color: '#9b968a' }} />
+            <span style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.06em' }}>
+              {match.estadio}, {match.ciudad}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-1 mt-4 text-xs text-muted-foreground">
-          <MapPin className="w-3 h-3" />
-          <span>{match.estadio}, {match.ciudad}</span>
+        {/* Predictions */}
+        <div style={{ borderBottom: `2px solid ${INK}`, paddingBottom: 8, marginBottom: 12 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: INK }}>
+            {isStarted ? 'Pronósticos del grupo' : 'Mi pronóstico'}
+          </h2>
+          {!isStarted && (
+            <p style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.06em', marginTop: 4 }}>
+              Los pronósticos de otros jugadores se mostrarán después del kickoff.
+            </p>
+          )}
         </div>
-      </Card>
 
-      {/* Predictions */}
-      <h2 className="text-lg font-bold mb-3">
-        {isStarted ? 'Pronósticos del grupo' : 'Mi pronóstico'}
-      </h2>
+        {visiblePredictions.length === 0 ? (
+          <div style={{ padding: '32px 0', textAlign: 'center', border: `2px dashed ${INK}`, background: CONCRETE }}>
+            <p style={{ fontSize: 12, color: '#9b968a' }}>
+              {isStarted ? 'No hay pronósticos' : 'No has hecho pronóstico para este partido'}
+            </p>
+          </div>
+        ) : (
+          <div style={{ border: `2px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}` }}>
+            {visiblePredictions.map((pred, idx) => {
+              const isExact = isFinished && pred.gol_local_pred === match.gol_local && pred.gol_visitante_pred === match.gol_visitante;
+              const isMe = pred.user_id === user?.id;
 
-      {!isStarted && (
-        <p className="text-xs text-muted-foreground mb-3">
-          Los pronósticos de otros jugadores se mostrarán después del kickoff.
-        </p>
-      )}
+              return (
+                <motion.div
+                  key={pred.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(idx * 0.04, 0.4) }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'stretch',
+                    borderBottom: idx < visiblePredictions.length - 1 ? `2px solid ${INK}` : 'none',
+                    background: isMe ? INK : CONCRETE,
+                  }}
+                >
+                  {/* Rank */}
+                  <div
+                    style={{
+                      width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: isExact ? YELLOW : (isMe ? '#2a2926' : '#d8d5cc'),
+                      borderRight: `2px solid ${INK}`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 700, color: isExact ? INK : (isMe ? '#9b968a' : INK) }}>
+                      {idx + 1}
+                    </span>
+                  </div>
 
-      <div className="space-y-2">
-        {visiblePredictions.map((pred, idx) => {
-          const isExact = isFinished && pred.gol_local_pred === match.gol_local && pred.gol_visitante_pred === match.gol_visitante;
-          const isMe = pred.user_id === user?.id;
+                  {/* Name + score */}
+                  <div style={{ flex: 1, padding: '10px 12px', minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', color: isMe ? CONCRETE : INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {getMemberName(pred.user_id)}
+                      {isMe && <span style={{ fontSize: 9, fontWeight: 400, color: '#9b968a', marginLeft: 6 }}>TÚ</span>}
+                    </p>
+                    <p style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.04em', color: isMe ? CONCRETE : INK, marginTop: 2 }}>
+                      {pred.gol_local_pred} – {pred.gol_visitante_pred}
+                    </p>
+                  </div>
 
-          return (
-            <motion.div
-              key={pred.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <Card className={`p-3 flex items-center gap-3 ${isMe ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}>
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-                  {idx + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {getMemberName(pred.user_id)}
-                    {isMe && <span className="text-xs text-muted-foreground ml-1">(tú)</span>}
-                  </p>
-                  <p className="text-lg font-bold">
-                    {pred.gol_local_pred} - {pred.gol_visitante_pred}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isExact && <Target className="w-4 h-4 text-accent" />}
-                  {isFinished && (
-                    <Badge className="bg-accent text-accent-foreground font-bold">
-                      +{pred.puntos_obtenidos || 0}
-                    </Badge>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          );
-        })}
-
-        {visiblePredictions.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            {isStarted ? 'No hay pronósticos' : 'No has hecho pronóstico para este partido'}
+                  {/* Points */}
+                  <div
+                    style={{
+                      padding: '10px 12px', textAlign: 'right',
+                      borderLeft: `2px solid ${INK}`, flexShrink: 0,
+                      display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center',
+                    }}
+                  >
+                    {isExact && <Target style={{ width: 14, height: 14, color: YELLOW, marginBottom: 2 }} />}
+                    {isFinished && (
+                      <>
+                        <p style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.04em', color: isMe ? YELLOW : INK, lineHeight: 1 }}>
+                          +{pred.puntos_obtenidos || 0}
+                        </p>
+                        <p style={{ fontSize: 8, color: '#9b968a', letterSpacing: '0.14em', textTransform: 'uppercase', marginTop: 1 }}>pts</p>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>

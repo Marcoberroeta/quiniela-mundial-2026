@@ -1,28 +1,51 @@
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Copy, Check, Users, Eye, CheckCircle, Gift, Trophy, TrendingUp } from 'lucide-react';
+import { Copy, Check, Eye, CheckCircle, Gift, Trophy, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
+const INK = '#14130f';
+const CONCRETE = '#e4e1d8';
+const RED = '#E2001A';
+const BLUE = '#0E63B3';
+const YELLOW = '#FFC20E';
+const GREEN = '#00923F';
+const CONCRETE_DK = '#2a2926';
+
 const PHASE_MULTIPLIERS = [
-  { fase: 'Grupos',        mult: '×1' },
-  { fase: 'Dieciseisavos', mult: '×1' },
-  { fase: 'Octavos',       mult: '×2' },
-  { fase: 'Cuartos',       mult: '×2' },
-  { fase: 'Semifinales',   mult: '×3' },
-  { fase: 'Tercer Lugar',  mult: '×3' },
-  { fase: 'Final',         mult: '×4', highlight: true },
+  { fase: 'Grupos',        mult: '×1', color: BLUE },
+  { fase: 'Dieciseisavos', mult: '×1', color: BLUE },
+  { fase: 'Octavos',       mult: '×2', color: RED },
+  { fase: 'Cuartos',       mult: '×2', color: RED },
+  { fase: 'Semis',         mult: '×3', color: RED },
+  { fase: '3er Lugar',     mult: '×3', color: RED },
+  { fase: 'Final',         mult: '×4', color: YELLOW, highlight: true },
 ];
 
-function DarkCard({ children, className = '' }) {
+function DarkBlock({ children, className = '', accent = null }) {
   return (
-    <div className={`bg-[#1c1c1e] border border-white/8 rounded-2xl ${className}`}>
+    <div
+      style={{
+        background: CONCRETE_DK,
+        border: `2px solid ${CONCRETE}`,
+        borderLeft: accent ? `5px solid ${accent}` : `2px solid ${CONCRETE}`,
+        padding: '14px 16px',
+        marginBottom: 8,
+        boxShadow: `3px 3px 0 rgba(255,255,255,0.06)`,
+      }}
+    >
       {children}
     </div>
   );
 }
 
 function SectionTitle({ children }) {
-  return <h3 className="text-white text-xl font-bold text-center my-5">{children}</h3>;
+  return (
+    <div style={{
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
+      color: '#9b968a', padding: '20px 0 10px',
+    }}>
+      {children}
+    </div>
+  );
 }
 
 export default function GroupRules({ group, members }) {
@@ -37,170 +60,247 @@ export default function GroupRules({ group, members }) {
   };
 
   return (
-    <div className="bg-black min-h-screen -mx-4 -mt-4 px-4 pt-4 pb-24 text-white space-y-1">
-
-      {/* Invite */}
-      <DarkCard className="p-4 text-center mb-4">
-        <p className="text-gray-400 text-sm mb-1">Código de invitación</p>
-        <p className="text-3xl font-mono font-bold tracking-[0.25em] text-[#a3e635] mb-3">
+    <div
+      style={{
+        background: INK,
+        minHeight: '100vh',
+        margin: '-16px -16px 0',
+        padding: '16px 16px 96px',
+        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+        color: CONCRETE,
+      }}
+    >
+      {/* Invite code */}
+      <div
+        style={{
+          border: `2px solid ${CONCRETE}`,
+          borderLeft: `5px solid ${GREEN}`,
+          padding: 16,
+          marginBottom: 8,
+          textAlign: 'center',
+          background: CONCRETE_DK,
+        }}
+      >
+        <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', marginBottom: 8 }}>
+          Código de invitación
+        </p>
+        <p style={{
+          fontFamily: 'monospace',
+          fontSize: 32,
+          fontWeight: 700,
+          letterSpacing: '0.25em',
+          color: GREEN,
+          marginBottom: 12,
+        }}>
           {group.codigo_invitacion}
         </p>
-        <Button
+        <button
           onClick={handleShare}
-          size="sm"
-          className="bg-white/10 hover:bg-white/20 text-white border-0"
+          style={{
+            background: 'rgba(255,255,255,0.08)',
+            color: CONCRETE,
+            border: `2px solid ${CONCRETE}`,
+            padding: '8px 16px',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
         >
-          {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-          {copied ? 'Copiado' : 'Compartir invitación'}
-        </Button>
-      </DarkCard>
+          {copied ? <Check style={{ width: 12, height: 12 }} /> : <Copy style={{ width: 12, height: 12 }} />}
+          {copied ? 'Copiado' : 'Compartir'}
+        </button>
+      </div>
 
-      {/* Scoring system */}
+      {/* Scoring */}
       <SectionTitle>¿Cómo funciona la puntuación?</SectionTitle>
 
-      {/* Winner correct */}
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[#a3e635] text-lg">🎯</span>
-          <span className="font-bold text-[#a3e635]">Ganador correcto o empate</span>
+      <DarkBlock accent={GREEN}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ fontSize: 14 }}>🎯</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Ganador correcto o empate
+          </span>
         </div>
-        <p className="text-gray-400 text-sm">
-          Si aciertas al ganador (o empate), obtienes <span className="text-[#a3e635] font-bold">12 puntos</span>.
+        <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.6 }}>
+          Aciertas al ganador (o empate) →{' '}
+          <span style={{ color: GREEN, fontWeight: 700 }}>12 puntos</span> base.
         </p>
-      </DarkCard>
+      </DarkBlock>
 
-      {/* Penalty per goal */}
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-amber-400 text-lg">—</span>
-          <span className="font-bold text-amber-400">Penalización por gol</span>
+      <DarkBlock accent={YELLOW}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ fontSize: 14 }}>—</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: YELLOW, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Penalización por gol
+          </span>
         </div>
-        <p className="text-gray-400 text-sm">
-          Si aciertas al ganador pero no el marcador exacto, se resta{' '}
-          <span className="text-amber-400 font-bold">1 pt</span> por cada gol de diferencia.
-          Mínimo siempre llevas <span className="text-amber-400 font-bold">1 pt</span>.
+        <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.6 }}>
+          Por cada gol de diferencia se resta{' '}
+          <span style={{ color: YELLOW, fontWeight: 700 }}>1 pt</span>.
+          Mínimo siempre <span style={{ color: YELLOW, fontWeight: 700 }}>1 pt</span>.
         </p>
-        <div className="mt-3 rounded-xl overflow-hidden bg-[#111]">
-          <div className="p-3 text-sm text-gray-300 border-b border-white/8">
-            Dif. goles = 2 → 12 − 2 =
-            <span className="float-right font-bold text-[#a3e635]">10 pts</span>
+        <div style={{ marginTop: 10, border: `1px solid rgba(255,255,255,0.1)`, background: '#111' }}>
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9b968a' }}>
+            <span>Dif. 2 goles → 12 − 2</span>
+            <span style={{ color: GREEN, fontWeight: 700 }}>10 pts</span>
           </div>
-          <div className="p-3 text-sm text-gray-300">
-            Marcador exacto →
-            <span className="float-right font-bold text-[#a3e635]">12 pts ✓</span>
+          <div style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9b968a' }}>
+            <span>Marcador exacto</span>
+            <span style={{ color: GREEN, fontWeight: 700 }}>12 pts ✓</span>
           </div>
         </div>
-      </DarkCard>
+      </DarkBlock>
 
-      {/* Wrong winner */}
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-red-500 text-lg">✗</span>
-          <span className="font-bold text-red-400">Ganador incorrecto</span>
+      <DarkBlock accent={RED}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ fontSize: 14, color: RED }}>✗</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Ganador incorrecto
+          </span>
         </div>
-        <p className="text-gray-400 text-sm">
-          Si no aciertas al ganador, obtienes{' '}
-          <span className="text-red-400 font-bold">0 puntos</span> sin importar el marcador.
+        <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.6 }}>
+          No aciertas al ganador →{' '}
+          <span style={{ color: RED, fontWeight: 700 }}>0 puntos</span>.
         </p>
-      </DarkCard>
+      </DarkBlock>
 
       {/* Phase multipliers */}
       <SectionTitle>Multiplicadores por fase</SectionTitle>
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="w-4 h-4 text-[#a3e635]" />
-          <p className="text-gray-400 text-sm">
-            Conforme avanza el torneo, <span className="text-white font-bold">acertar al ganador vale más</span>.
+      <DarkBlock accent={BLUE}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <TrendingUp style={{ width: 14, height: 14, color: GREEN }} />
+          <p style={{ fontSize: 12, color: '#9b968a' }}>
+            Conforme avanza el torneo,{' '}
+            <span style={{ color: CONCRETE, fontWeight: 700 }}>acertar vale más</span>.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {PHASE_MULTIPLIERS.map(({ fase, mult, highlight }) => (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {PHASE_MULTIPLIERS.map(({ fase, mult, color, highlight }) => (
             <span
               key={fase}
-              className={`px-3 py-1.5 rounded-full text-sm font-bold ${
-                highlight
-                  ? 'bg-[#a3e635] text-black'
-                  : 'bg-white/10 text-gray-300'
-              }`}
+              style={{
+                padding: '4px 10px',
+                background: highlight ? YELLOW : 'rgba(255,255,255,0.08)',
+                color: highlight ? INK : '#9b968a',
+                border: `2px solid ${highlight ? INK : 'rgba(255,255,255,0.15)'}`,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+              }}
             >
               {mult} {fase}
             </span>
           ))}
         </div>
-        <div className="mt-3 rounded-xl overflow-hidden bg-[#111]">
-          <div className="p-3 text-sm text-gray-400 border-b border-white/8">
-            Aciertas el marcador exacto en dos fases:
+        <div style={{ marginTop: 12, border: `1px solid rgba(255,255,255,0.1)`, background: '#111' }}>
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9b968a' }}>
+            <span>Marcador exacto · Grupos ×1</span>
+            <span style={{ color: GREEN, fontWeight: 700 }}>12 pts</span>
           </div>
-          <div className="flex justify-between p-3 border-b border-white/8">
-            <span className="text-sm text-gray-300">Grupos <span className="text-gray-500 text-xs">×1</span></span>
-            <span className="font-bold text-[#a3e635]">12 pts</span>
-          </div>
-          <div className="flex justify-between p-3 bg-[#1a1a1a]">
-            <span className="text-sm text-[#a3e635] font-medium">Final <span className="text-gray-400 text-xs">×4</span></span>
-            <span className="font-bold text-[#a3e635]">48 pts</span>
+          <div style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+            <span style={{ color: YELLOW, fontWeight: 700 }}>Marcador exacto · Final ×4</span>
+            <span style={{ color: YELLOW, fontWeight: 700 }}>48 pts</span>
           </div>
         </div>
-      </DarkCard>
+      </DarkBlock>
 
       {/* Visibility */}
       <SectionTitle>¿Puedo ver los picks de otros?</SectionTitle>
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-start gap-3">
-          <Eye className="w-5 h-5 text-[#a3e635] mt-0.5 flex-shrink-0" />
+      <DarkBlock accent={BLUE}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <Eye style={{ width: 16, height: 16, color: GREEN, marginTop: 1, flexShrink: 0 }} />
           <div>
-            <p className="font-bold text-white text-sm">Partidos en curso o no iniciados</p>
-            <p className="text-gray-400 text-sm mt-0.5">Solo ves los picks de otro cuando el partido ya terminó.</p>
+            <p style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Partidos no finalizados
+            </p>
+            <p style={{ fontSize: 11, color: '#9b968a', lineHeight: 1.5 }}>
+              Solo ves los picks de otros cuando el partido terminó.
+            </p>
           </div>
         </div>
-      </DarkCard>
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 text-[#a3e635] mt-0.5 flex-shrink-0" />
+      </DarkBlock>
+      <DarkBlock accent={GREEN}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <CheckCircle style={{ width: 16, height: 16, color: GREEN, marginTop: 1, flexShrink: 0 }} />
           <div>
-            <p className="font-bold text-white text-sm">Partidos finalizados</p>
-            <p className="text-gray-400 text-sm mt-0.5">Los picks de todos son visibles para comparar estrategias.</p>
+            <p style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Partidos finalizados
+            </p>
+            <p style={{ fontSize: 11, color: '#9b968a', lineHeight: 1.5 }}>
+              Todos los picks son visibles para comparar estrategias.
+            </p>
           </div>
         </div>
-      </DarkCard>
+      </DarkBlock>
 
       {/* Awards */}
       <SectionTitle>Premios y ganador</SectionTitle>
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-start gap-3">
-          <Gift className="w-5 h-5 text-[#a3e635] mt-0.5 flex-shrink-0" />
+      <DarkBlock accent={YELLOW}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <Gift style={{ width: 16, height: 16, color: YELLOW, marginTop: 1, flexShrink: 0 }} />
           <div>
-            <p className="font-bold text-white text-sm">Premios</p>
-            <p className="text-gray-400 text-sm mt-0.5">Ustedes definen qué se juegan, para cuántos lugares y cómo se reparten.</p>
+            <p style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Premios</p>
+            <p style={{ fontSize: 11, color: '#9b968a', lineHeight: 1.5 }}>
+              Ustedes definen qué se juegan, para cuántos lugares y cómo se reparten.
+            </p>
           </div>
         </div>
-      </DarkCard>
-      <DarkCard className="p-4 mb-3">
-        <div className="flex items-start gap-3">
-          <Trophy className="w-5 h-5 text-[#a3e635] mt-0.5 flex-shrink-0" />
+      </DarkBlock>
+      <DarkBlock accent={YELLOW}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <Trophy style={{ width: 16, height: 16, color: YELLOW, marginTop: 1, flexShrink: 0 }} />
           <div>
-            <p className="font-bold text-white text-sm">Ganador</p>
-            <p className="text-gray-400 text-sm mt-0.5">El que tenga más puntos al final del torneo gana. ¡Así de simple!</p>
+            <p style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Ganador</p>
+            <p style={{ fontSize: 11, color: '#9b968a', lineHeight: 1.5 }}>
+              El que tenga más puntos al final del torneo. ¡Así de simple!
+            </p>
           </div>
         </div>
-      </DarkCard>
+      </DarkBlock>
 
       {/* Members */}
       <SectionTitle>Miembros ({members.length})</SectionTitle>
-      <DarkCard className="divide-y divide-white/8">
-        {members.map((m) => (
-          <div key={m.id} className="flex items-center gap-3 p-3">
-            <div className="w-8 h-8 rounded-full bg-[#a3e635]/20 flex items-center justify-center">
-              <span className="text-xs font-bold text-[#a3e635]">
+      <div style={{ border: `2px solid ${CONCRETE}` }}>
+        {members.map((m, idx) => (
+          <div
+            key={m.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 12px',
+              borderBottom: idx < members.length - 1 ? `1px solid rgba(255,255,255,0.08)` : 'none',
+              background: CONCRETE_DK,
+            }}
+          >
+            <div style={{
+              width: 28, height: 28,
+              background: `rgba(${idx === 0 ? '226,0,26' : idx === 1 ? '14,99,179' : '0,146,63'},0.25)`,
+              border: `2px solid rgba(255,255,255,0.15)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: [RED, BLUE, GREEN, YELLOW][idx % 4] }}>
                 {(m.user_nombre || m.user_email || '?')[0].toUpperCase()}
               </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{m.user_nombre || m.user_email}</p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, textTransform: 'uppercase', letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {m.user_nombre || m.user_email}
+              </p>
             </div>
-            <span className="text-sm font-bold text-[#a3e635]">{m.puntos_totales || 0} pts</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: GREEN, letterSpacing: '-0.02em' }}>
+              {m.puntos_totales || 0}
+              <span style={{ fontSize: 9, color: '#9b968a', marginLeft: 3, letterSpacing: '0.1em' }}>pts</span>
+            </span>
           </div>
         ))}
-      </DarkCard>
+      </div>
     </div>
   );
 }

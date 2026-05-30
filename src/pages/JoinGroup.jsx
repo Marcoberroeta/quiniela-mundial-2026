@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft, Users, Check } from 'lucide-react';
+import { ArrowLeft, Users } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+
+const INK = '#14130f';
+const CONCRETE = '#e4e1d8';
+const BLUE = '#0E63B3';
+const GREEN = '#00923F';
 
 export default function JoinGroup() {
   const navigate = useNavigate();
@@ -15,9 +17,7 @@ export default function JoinGroup() {
   const [autoJoining, setAutoJoining] = useState(!!code);
 
   useEffect(() => {
-    if (code) {
-      handleJoin(code);
-    }
+    if (code) handleJoin(code);
   }, [code]);
 
   const handleJoin = async (joinCode) => {
@@ -27,11 +27,8 @@ export default function JoinGroup() {
       setAutoJoining(false);
       return;
     }
-
     setLoading(true);
     const user = await base44.auth.me();
-
-    // Find group by code
     const groups = await base44.entities.Group.filter({ codigo_invitacion: trimmed });
     if (!groups.length) {
       toast.error('Grupo no encontrado');
@@ -39,22 +36,13 @@ export default function JoinGroup() {
       setAutoJoining(false);
       return;
     }
-
     const group = groups[0];
-
-    // Check if already a member
-    const existing = await base44.entities.GroupMember.filter({
-      group_id: group.id,
-      user_id: user.id,
-    });
-
+    const existing = await base44.entities.GroupMember.filter({ group_id: group.id, user_id: user.id });
     if (existing.length) {
       toast.info('Ya eres miembro de este grupo');
       navigate(`/group/${group.id}`);
       return;
     }
-
-    // Join
     await base44.entities.GroupMember.create({
       group_id: group.id,
       user_id: user.id,
@@ -62,54 +50,126 @@ export default function JoinGroup() {
       user_email: user.email,
       puntos_totales: 0,
     });
-
     toast.success(`¡Te uniste a "${group.nombre}"!`);
     navigate(`/group/${group.id}`);
   };
 
   if (autoJoining) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Uniéndote al grupo...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: 32, height: 32, border: `3px solid #c7c3b8`, borderTop: `3px solid ${BLUE}`,
+            borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px',
+          }} />
+          <p style={{ fontSize: 11, color: '#9b968a', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Uniéndote al grupo...
+          </p>
         </div>
       </div>
     );
   }
 
+  const isValid = inputCode.length === 6;
+
   return (
-    <div className="p-4">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-6 pt-4">
-        <ArrowLeft className="w-4 h-4" /> Volver
+    <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '16px 16px 96px' }}>
+      {/* Back */}
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          fontSize: 11, color: '#9b968a', letterSpacing: '0.1em', textTransform: 'uppercase',
+          marginBottom: 32, marginTop: 16,
+          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+        }}
+      >
+        <ArrowLeft style={{ width: 14, height: 14 }} /> Volver
       </button>
 
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 rounded-2xl mb-4">
-          <Users className="w-8 h-8 text-accent" />
+      {/* Header block */}
+      <div
+        style={{
+          border: `3px solid ${INK}`,
+          background: BLUE,
+          color: '#fff',
+          padding: '20px 20px 20px',
+          marginBottom: 28,
+          boxShadow: `5px 5px 0 ${INK}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+        }}
+      >
+        <div
+          style={{
+            width: 48, height: 48,
+            border: `2px solid rgba(255,255,255,0.4)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <Users style={{ width: 24, height: 24, color: '#fff' }} />
         </div>
-        <h1 className="text-2xl font-bold">Unirme a un grupo</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Ingresa el código de 6 caracteres
-        </p>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 1 }}>
+            Unirme a un grupo
+          </h1>
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.1em', marginTop: 4 }}>
+            Código de 6 caracteres
+          </p>
+        </div>
       </div>
 
-      <Card className="p-6 max-w-sm mx-auto">
-        <Input
+      {/* Input area */}
+      <div
+        style={{
+          border: `3px solid ${INK}`,
+          background: CONCRETE,
+          padding: 20,
+          boxShadow: `4px 4px 0 ${INK}`,
+          maxWidth: 360,
+          margin: '0 auto',
+        }}
+      >
+        <input
           value={inputCode}
           onChange={(e) => setInputCode(e.target.value.toUpperCase().slice(0, 6))}
           placeholder="ABC123"
-          className="text-center text-2xl font-mono tracking-[0.3em] h-14"
           maxLength={6}
+          style={{
+            width: '100%',
+            textAlign: 'center',
+            fontSize: 32,
+            fontWeight: 700,
+            fontFamily: 'monospace',
+            letterSpacing: '0.3em',
+            height: 64,
+            border: `2px solid ${INK}`,
+            background: CONCRETE,
+            color: INK,
+            outline: 'none',
+            marginBottom: 16,
+          }}
+          onFocus={e => e.target.style.borderColor = BLUE}
+          onBlur={e => e.target.style.borderColor = INK}
         />
-        <Button
+        <button
           onClick={() => handleJoin()}
-          disabled={inputCode.length !== 6 || loading}
-          className="w-full mt-4 bg-primary hover:bg-primary/90 h-12"
+          disabled={!isValid || loading}
+          style={{
+            width: '100%', height: 52,
+            border: `2px solid ${INK}`,
+            background: !isValid || loading ? '#c7c3b8' : INK,
+            color: CONCRETE,
+            fontWeight: 700, fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase',
+            cursor: !isValid || loading ? 'not-allowed' : 'pointer',
+            boxShadow: !isValid || loading ? 'none' : `4px 4px 0 ${INK}`,
+          }}
         >
           {loading ? 'Buscando...' : 'Unirme'}
-        </Button>
-      </Card>
+        </button>
+      </div>
     </div>
   );
 }

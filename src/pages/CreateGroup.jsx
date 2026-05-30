@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ArrowLeft, ChevronDown, Copy, Check, Settings } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Settings, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { generateInviteCode } from '@/lib/matchData';
 import { toast } from 'sonner';
 
-// New scoring: 12 pts base for correct winner, -1 per goal diff, multiplied by phase
-// These legacy fields are kept for DB compatibility but calculatePoints now uses fixed logic
+const INK = '#14130f';
+const CONCRETE = '#e4e1d8';
+const RED = '#E2001A';
+const GREEN = '#00923F';
+const YELLOW = '#FFC20E';
+
 const DEFAULT_RULES = {
   marcador_exacto: 12,
   signo_diferencia: 12,
@@ -28,11 +28,8 @@ const RULE_LABELS = {
   bonus_eliminacion: 'Bonus eliminación (penales)',
 };
 
-import { useQuery } from '@tanstack/react-query';
-
 export default function CreateGroup() {
   const navigate = useNavigate();
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
   const [nombre, setNombre] = useState('');
   const [reglas, setReglas] = useState({ ...DEFAULT_RULES });
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -43,17 +40,13 @@ export default function CreateGroup() {
   const handleCreate = async () => {
     if (!nombre.trim()) return;
     setLoading(true);
-
     const codigo = generateInviteCode();
     const user = await base44.auth.me();
-
     const group = await base44.entities.Group.create({
       nombre: nombre.trim(),
       codigo_invitacion: codigo,
       reglas_puntos: reglas,
     });
-
-    // Auto-join as member
     await base44.entities.GroupMember.create({
       group_id: group.id,
       user_id: user.id,
@@ -61,7 +54,6 @@ export default function CreateGroup() {
       user_email: user.email,
       puntos_totales: 0,
     });
-
     setCreated(group);
     setLoading(false);
   };
@@ -76,97 +68,197 @@ export default function CreateGroup() {
 
   if (created) {
     return (
-      <div className="p-4 pt-12 text-center">
-        <div className="text-5xl mb-4">🎉</div>
-        <h1 className="text-2xl font-bold mb-2">¡Grupo creado!</h1>
-        <p className="text-muted-foreground mb-6">{created.nombre}</p>
+      <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '48px 16px 96px', textAlign: 'center' }}>
+        {/* Success header */}
+        <div
+          style={{
+            border: `3px solid ${INK}`,
+            background: GREEN,
+            color: '#fff',
+            padding: '20px 24px',
+            marginBottom: 24,
+            boxShadow: `5px 5px 0 ${INK}`,
+          }}
+        >
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 8 }}>
+            ¡Grupo creado!
+          </p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
+            {created.nombre}
+          </h1>
+        </div>
 
-        <Card className="p-6 mb-6 max-w-sm mx-auto">
-          <p className="text-sm text-muted-foreground mb-2">Código de invitación</p>
-          <p className="text-3xl font-mono font-bold tracking-[0.3em] text-primary">
+        {/* Invite code block */}
+        <div
+          style={{
+            border: `3px solid ${INK}`,
+            background: CONCRETE,
+            padding: '20px 24px',
+            marginBottom: 24,
+            maxWidth: 320,
+            margin: '0 auto 24px',
+            boxShadow: `4px 4px 0 ${INK}`,
+          }}
+        >
+          <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', marginBottom: 10 }}>
+            Código de invitación
+          </p>
+          <p style={{ fontFamily: 'monospace', fontSize: 36, fontWeight: 700, letterSpacing: '0.3em', color: INK }}>
             {created.codigo_invitacion}
           </p>
-        </Card>
-
-        <div className="space-y-3 max-w-sm mx-auto">
-          <Button onClick={handleCopy} className="w-full" variant="outline">
-            {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-            {copied ? 'Copiado' : 'Copiar link de invitación'}
-          </Button>
-          <Button onClick={() => navigate(`/group/${created.id}`)} className="w-full bg-primary">
-            Ir al grupo
-          </Button>
         </div>
-      </div>
-    );
-  }
 
-  if (user && user.role !== 'admin') {
-    return (
-      <div className="p-4 pt-12 text-center">
-        <div className="text-5xl mb-4">🔒</div>
-        <h1 className="text-xl font-bold mb-2">Acceso restringido</h1>
-        <p className="text-muted-foreground mb-6">Solo los administradores pueden crear grupos. Pide un código de invitación para unirte.</p>
-        <Button onClick={() => navigate('/join')} className="bg-primary">Unirme con código</Button>
+        <div style={{ maxWidth: 320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button
+            onClick={handleCopy}
+            style={{
+              width: '100%', height: 48,
+              border: `2px solid ${INK}`,
+              background: CONCRETE,
+              color: INK,
+              fontWeight: 700, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: `3px 3px 0 ${INK}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            {copied ? <Check style={{ width: 14, height: 14 }} /> : <Copy style={{ width: 14, height: 14 }} />}
+            {copied ? 'Copiado' : 'Copiar link de invitación'}
+          </button>
+          <button
+            onClick={() => navigate(`/group/${created.id}`)}
+            style={{
+              width: '100%', height: 48,
+              border: `2px solid ${INK}`,
+              background: INK,
+              color: CONCRETE,
+              fontWeight: 700, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: `3px 3px 0 ${INK}`,
+            }}
+          >
+            Ir al grupo
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-6 pt-4">
-        <ArrowLeft className="w-4 h-4" /> Volver
+    <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '16px 16px 96px' }}>
+      {/* Back */}
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          fontSize: 11, color: '#9b968a', letterSpacing: '0.1em', textTransform: 'uppercase',
+          marginBottom: 24, marginTop: 16,
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        <ArrowLeft style={{ width: 14, height: 14 }} /> Volver
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">Crear grupo</h1>
+      {/* Title */}
+      <div style={{ borderBottom: `3px solid ${INK}`, paddingBottom: 12, marginBottom: 24 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', textTransform: 'uppercase', color: INK }}>
+          Crear grupo
+        </h1>
+      </div>
 
-      <div className="space-y-6">
+      {/* Form */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>
-          <Label htmlFor="nombre" className="text-sm font-medium">Nombre del grupo</Label>
+          <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', display: 'block', marginBottom: 8 }}>
+            Nombre del grupo
+          </label>
           <Input
-            id="nombre"
             placeholder="Ej: La Oficina, Los Primos..."
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            className="mt-1.5"
           />
         </div>
 
-        <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-              <span className="flex items-center gap-2 text-sm font-medium">
-                <Settings className="w-4 h-4" /> Reglas de puntos
-              </span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${rulesOpen ? 'rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3">
-            <Card className="p-4 space-y-4">
-              {Object.entries(RULE_LABELS).map(([key, label]) => (
-                <div key={key} className="flex items-center justify-between">
-                  <Label className="text-sm">{label}</Label>
-                  <Input
+        {/* Collapsible rules */}
+        <div>
+          <button
+            onClick={() => setRulesOpen(!rulesOpen)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0',
+              borderTop: `2px solid ${INK}`, borderBottom: rulesOpen ? 'none' : `2px solid ${INK}`,
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9b968a' }}>
+              <Settings style={{ width: 13, height: 13 }} /> Reglas de puntos
+            </span>
+            <ChevronDown
+              style={{
+                width: 16, height: 16, color: '#9b968a',
+                transform: rulesOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.15s',
+              }}
+            />
+          </button>
+
+          {rulesOpen && (
+            <div
+              style={{
+                border: `2px solid ${INK}`,
+                borderTop: 'none',
+                background: '#d8d5cc',
+                padding: 12,
+              }}
+            >
+              {Object.entries(RULE_LABELS).map(([key, label], idx, arr) => (
+                <div
+                  key={key}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    paddingBottom: idx < arr.length - 1 ? 10 : 0,
+                    marginBottom: idx < arr.length - 1 ? 10 : 0,
+                    borderBottom: idx < arr.length - 1 ? `1px solid #c7c3b8` : 'none',
+                  }}
+                >
+                  <label style={{ fontSize: 11, color: INK, fontWeight: 500 }}>{label}</label>
+                  <input
                     type="number"
                     min={0}
                     max={20}
                     value={reglas[key]}
                     onChange={(e) => setReglas({ ...reglas, [key]: parseInt(e.target.value) || 0 })}
-                    className="w-20 text-center"
+                    style={{
+                      width: 64, textAlign: 'center',
+                      border: `2px solid ${INK}`,
+                      background: CONCRETE,
+                      padding: '4px 8px',
+                      fontSize: 14, fontWeight: 700,
+                      fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                    }}
                   />
                 </div>
               ))}
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
+            </div>
+          )}
+        </div>
 
-        <Button
+        <button
           onClick={handleCreate}
           disabled={!nombre.trim() || loading}
-          className="w-full bg-primary hover:bg-primary/90 h-12 text-base"
+          style={{
+            width: '100%', height: 52,
+            border: `2px solid ${INK}`,
+            background: !nombre.trim() || loading ? '#c7c3b8' : INK,
+            color: CONCRETE,
+            fontWeight: 700, fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase',
+            cursor: !nombre.trim() || loading ? 'not-allowed' : 'pointer',
+            boxShadow: !nombre.trim() || loading ? 'none' : `4px 4px 0 ${INK}`,
+            transition: 'background 0.1s',
+          }}
         >
           {loading ? 'Creando...' : 'Crear grupo'}
-        </Button>
+        </button>
       </div>
     </div>
   );
