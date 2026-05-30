@@ -15,6 +15,20 @@ import Fixture from './pages/Fixture';
 import GlobalLeaderboard from './pages/GlobalLeaderboard';
 import AppShell from './components/AppShell';
 
+// Protected route component
+const ProtectedRoute = ({ children, requiredRole }) => {
+  const { data: user } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  if (requiredRole && user?.role !== requiredRole) {
+    return <PageNotFound />;
+  }
+
+  return children;
+};
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -49,7 +63,11 @@ const AuthenticatedApp = () => {
         <Route path="/join/:code" element={<JoinGroup />} />
         <Route path="/group/:groupId" element={<GroupView />} />
         <Route path="/match/:matchId" element={<MatchDetail />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin" element={
+          <ProtectedRoute requiredRole="admin">
+            <Admin />
+          </ProtectedRoute>
+        } />
         <Route path="/fixture" element={<Fixture />} />
         <Route path="/ranking" element={<GlobalLeaderboard />} />
       </Route>
