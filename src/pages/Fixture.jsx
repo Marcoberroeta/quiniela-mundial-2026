@@ -13,6 +13,7 @@ const CONCRETE_MID = '#d8d5cc';
 const BLUE = '#0E63B3';
 const RED = '#E2001A';
 const GREEN = '#00923F';
+const YELLOW = '#FFC20E';
 
 const GRUPOS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 
