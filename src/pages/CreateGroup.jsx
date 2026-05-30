@@ -28,8 +28,11 @@ const RULE_LABELS = {
   bonus_eliminacion: 'Bonus eliminación (penales)',
 };
 
+import { useQuery } from '@tanstack/react-query';
+
 export default function CreateGroup() {
   const navigate = useNavigate();
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
   const [nombre, setNombre] = useState('');
   const [reglas, setReglas] = useState({ ...DEFAULT_RULES });
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -94,6 +97,17 @@ export default function CreateGroup() {
             Ir al grupo
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (user && user.role !== 'admin') {
+    return (
+      <div className="p-4 pt-12 text-center">
+        <div className="text-5xl mb-4">🔒</div>
+        <h1 className="text-xl font-bold mb-2">Acceso restringido</h1>
+        <p className="text-muted-foreground mb-6">Solo los administradores pueden crear grupos. Pide un código de invitación para unirte.</p>
+        <Button onClick={() => navigate('/join')} className="bg-primary">Unirme con código</Button>
       </div>
     );
   }

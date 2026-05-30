@@ -107,17 +107,19 @@ export default function Home() {
 
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Link to="/create-group">
-          <Card className="p-4 text-center hover:shadow-md transition-all border-primary/20 bg-primary/5 active:scale-[0.97]">
-            <Plus className="w-6 h-6 mx-auto text-primary mb-2" />
-            <p className="text-sm font-semibold">Nuevo grupo</p>
-          </Card>
-        </Link>
+      <div className={`grid gap-3 mb-6 ${user?.role === 'admin' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {user?.role === 'admin' && (
+          <Link to="/create-group">
+            <Card className="p-4 text-center hover:shadow-md transition-all border-primary/20 bg-primary/5 active:scale-[0.97]">
+              <Plus className="w-6 h-6 mx-auto text-primary mb-2" />
+              <p className="text-sm font-semibold">Nuevo grupo</p>
+            </Card>
+          </Link>
+        )}
         <Link to="/join">
           <Card className="p-4 text-center hover:shadow-md transition-all border-accent/30 bg-accent/5 active:scale-[0.97]">
             <Users className="w-6 h-6 mx-auto text-accent mb-2" />
-            <p className="text-sm font-semibold">Unirme</p>
+            <p className="text-sm font-semibold">Unirme con código</p>
           </Card>
         </Link>
       </div>
