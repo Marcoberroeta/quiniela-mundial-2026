@@ -1,17 +1,19 @@
 import React, { useMemo } from 'react';
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { TEAM_FLAGS } from '@/lib/matchData';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Clock, MapPin, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+
+const INK = '#14130f';
+const CONCRETE = '#e4e1d8';
+const CONCRETE_MID = '#d8d5cc';
 
 const PHASES = [
-  { key: 'ronda_32', label: 'Ronda de 32', matches_count: 16 },
-  { key: 'octavos', label: 'Octavos de Final', matches_count: 8 },
-  { key: 'cuartos', label: 'Cuartos de Final', matches_count: 4 },
-  { key: 'semis', label: 'Semifinales', matches_count: 2 },
-  { key: 'final', label: 'Final', matches_count: 1 },
+  { key: 'ronda_32', label: 'Ronda 32',  color: '#0E63B3', mult: '×1' },
+  { key: 'octavos',  label: 'Octavos',   color: '#0E63B3', mult: '×2' },
+  { key: 'cuartos',  label: 'Cuartos',   color: '#E2001A', mult: '×2' },
+  { key: 'semis',    label: 'Semis',     color: '#E2001A', mult: '×3' },
+  { key: 'final',    label: 'Final',     color: '#FFC20E', mult: '×4' },
 ];
 
 function BracketMatch({ match }) {
@@ -21,101 +23,131 @@ function BracketMatch({ match }) {
   const live = match.estado === 'en_vivo';
   const isKnown = match.equipo_local !== 'Por definir';
 
+  const teamRow = (team, goles, isWinner) => (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 6,
+        padding: '6px 8px',
+        background: isWinner ? INK : 'transparent',
+        borderBottom: `1px solid #c7c3b8`,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
+        <span style={{ fontSize: 16, flexShrink: 0 }}>{flag(team)}</span>
+        <span style={{
+          fontSize: 11, fontWeight: isWinner ? 700 : 500,
+          textTransform: 'uppercase', letterSpacing: '0.02em',
+          color: isWinner ? CONCRETE : INK,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {isKnown ? team : '⏳'}
+        </span>
+      </div>
+      {(finished || live) && (
+        <span style={{
+          fontSize: 14, fontWeight: 700,
+          color: isWinner ? '#FFC20E' : (live ? '#E2001A' : '#9b968a'),
+          minWidth: 16, textAlign: 'right', flexShrink: 0,
+        }}>
+          {goles ?? '-'}
+        </span>
+      )}
+    </div>
+  );
+
+  const localWins = finished && match.gol_local > match.gol_visitante;
+  const visitanteWins = finished && match.gol_visitante > match.gol_local;
+
   return (
-    <Card className="mb-3 overflow-hidden border border-border/50 hover:shadow-md transition-shadow">
-      {/* Match number + time */}
-      <div className="px-3 py-1.5 bg-muted/40 border-b border-border/30 flex items-center justify-between">
-        <span className="text-[10px] font-bold text-muted-foreground uppercase">
+    <div
+      style={{
+        border: `2px solid ${INK}`,
+        marginBottom: 8,
+        background: CONCRETE,
+        boxShadow: `2px 2px 0 ${INK}`,
+      }}
+    >
+      {/* Match header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '4px 8px',
+          background: CONCRETE_MID,
+          borderBottom: `1px solid ${INK}`,
+        }}
+      >
+        <span style={{ fontSize: 9, fontWeight: 700, color: '#9b968a', letterSpacing: '0.1em' }}>
           #{match.match_number}
         </span>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-            <Clock className="w-3 h-3" />
-            {format(kickoff, 'HH:mm', { locale: es })}
-          </span>
-          {finished && <Badge className="text-[9px] bg-primary/10 text-primary">✓ Final</Badge>}
-          {live && <Badge className="text-[9px] bg-red-500 text-white">🔴 Vivo</Badge>}
-        </div>
+        <span style={{ fontSize: 9, color: '#9b968a', letterSpacing: '0.06em' }}>
+          {format(kickoff, 'HH:mm', { locale: es })}
+        </span>
+        {finished && (
+          <span style={{ fontSize: 9, fontWeight: 700, color: '#00923F', letterSpacing: '0.1em' }}>✓ FIN</span>
+        )}
+        {live && (
+          <span style={{ fontSize: 9, fontWeight: 700, color: '#E2001A' }}>● VIVO</span>
+        )}
       </div>
 
-      {/* Teams */}
-      <div className="divide-y divide-border/30">
-        {/* Local */}
-        <div
-          className={`p-2 flex items-center justify-between gap-2 ${
-            finished && match.gol_local > match.gol_visitante
-              ? 'bg-primary/10 font-semibold'
-              : isKnown ? '' : 'bg-muted/20'
-          }`}
-        >
-          <div className="flex items-center gap-1.5 min-w-0 flex-1">
-            <span className="text-lg flex-shrink-0">{flag(match.equipo_local)}</span>
-            <span className="text-xs truncate">
-              {isKnown ? match.equipo_local : '⏳ Por definir'}
-            </span>
-          </div>
-          {(finished || live) && (
-            <span className="text-sm font-bold text-center w-6 flex-shrink-0">
-              {match.gol_local ?? '-'}
-            </span>
-          )}
-        </div>
-
-        {/* Visitante */}
-        <div
-          className={`p-2 flex items-center justify-between gap-2 ${
-            finished && match.gol_visitante > match.gol_local
-              ? 'bg-primary/10 font-semibold'
-              : isKnown ? '' : 'bg-muted/20'
-          }`}
-        >
-          <div className="flex items-center gap-1.5 min-w-0 flex-1">
-            <span className="text-lg flex-shrink-0">{flag(match.equipo_visitante)}</span>
-            <span className="text-xs truncate">
-              {isKnown ? match.equipo_visitante : '⏳ Por definir'}
-            </span>
-          </div>
-          {(finished || live) && (
-            <span className="text-sm font-bold text-center w-6 flex-shrink-0">
-              {match.gol_visitante ?? '-'}
-            </span>
-          )}
-        </div>
+      {teamRow(match.equipo_local, match.gol_local, localWins)}
+      <div style={{ borderBottom: 'none' }}>
+        {teamRow(match.equipo_visitante, match.gol_visitante, visitanteWins)}
       </div>
 
-      {/* Venue info */}
-      {finished && (
-        <div className="px-3 py-1 text-[9px] text-muted-foreground border-t border-border/30 flex items-center gap-1">
-          <MapPin className="w-2.5 h-2.5" />
-          <span className="truncate">
-            {match.estadio}, {match.ciudad}
-          </span>
-        </div>
-      )}
-
-      {/* Tied match indicator for knockout */}
       {finished && match.gol_local === match.gol_visitante && match.fase !== 'grupos' && (
-        <div className="px-3 py-1 text-[9px] bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-200 border-t border-yellow-200 dark:border-yellow-800 flex items-center gap-1">
-          <AlertCircle className="w-2.5 h-2.5" />
-          <span>Definido en penales/prórroga</span>
+        <div style={{
+          padding: '3px 8px',
+          background: '#fffbe6',
+          borderTop: `1px solid #c7c3b8`,
+          fontSize: 9, color: '#9b968a',
+        }}>
+          Definido en penales/prórroga
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
 function PhaseColumn({ phase, matches }) {
+  const textColor = phase.color === '#FFC20E' ? INK : '#ffffff';
+
   return (
-    <div className="flex-shrink-0 w-56">
-      <div className="sticky top-0 bg-background/80 backdrop-blur z-10 pb-2 mb-2">
-        <h3 className="text-xs font-bold text-center text-muted-foreground uppercase tracking-wider">
+    <div style={{ flexShrink: 0, width: 200 }}>
+      {/* Phase header */}
+      <div
+        style={{
+          background: phase.color,
+          border: `2px solid ${INK}`,
+          borderBottom: 'none',
+          padding: '8px 10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 0,
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: textColor }}>
           {phase.label}
-        </h3>
-        <div className="text-[9px] text-center text-muted-foreground/60">
-          {matches.length} partidos
-        </div>
+        </span>
+        <span style={{
+          fontSize: 11, fontWeight: 700,
+          color: textColor,
+          background: 'rgba(0,0,0,0.2)',
+          padding: '1px 6px',
+        }}>
+          {phase.mult}
+        </span>
       </div>
-      <div className="space-y-2">
+      <div style={{ border: `2px solid ${INK}`, padding: 8, background: '#d8d5cc' }}>
+        <p style={{ fontSize: 9, color: '#9b968a', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 8 }}>
+          {matches.length} PARTIDOS
+        </p>
         {matches.map(m => (
           <BracketMatch key={m.id || m.match_number} match={m} />
         ))}
@@ -139,9 +171,9 @@ export default function BracketView({ dbMatches }) {
 
   if (!hasAnyKnockout) {
     return (
-      <div className="p-8 text-center">
-        <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-3 opacity-50" />
-        <p className="text-sm text-muted-foreground">
+      <div style={{ padding: 32, textAlign: 'center', border: `2px solid ${INK}`, margin: 16, background: CONCRETE }}>
+        <AlertCircle style={{ width: 32, height: 32, margin: '0 auto 12px', color: '#9b968a' }} />
+        <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.6 }}>
           Los partidos de eliminatorias se mostrarán aquí cuando comience esa fase.
         </p>
       </div>
@@ -149,9 +181,9 @@ export default function BracketView({ dbMatches }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="flex gap-4 p-4 min-w-max">
-        {PHASES.map(phase => (
+    <div style={{ overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 12, padding: 16, minWidth: 'max-content' }}>
+        {PHASES.filter(p => byPhase[p.key]?.length > 0).map(phase => (
           <PhaseColumn
             key={phase.key}
             phase={phase}

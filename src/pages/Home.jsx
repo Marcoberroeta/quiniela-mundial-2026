@@ -1,21 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Trophy, Users, Plus, ArrowRight, LogOut, Trash2 } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trophy, Users, Plus, ArrowRight, Settings } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import MatchCard from '@/components/MatchCard';
 import PredictionModal from '@/components/PredictionModal';
 import { toast } from 'sonner';
 
-export default function Home() {
-  const handleDeleteAccount = async () => {
-    await base44.auth.logout();
-  };
+const INK = '#14130f';
+const CONCRETE = '#e4e1d8';
+const RED = '#E2001A';
+const BLUE = '#0E63B3';
+const YELLOW = '#FFC20E';
+const GREEN = '#00923F';
 
+export default function Home() {
   const { data: user } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
@@ -39,17 +38,13 @@ export default function Home() {
   });
 
   const getMembershipForGroup = (groupId) => memberships.find(m => m.group_id === groupId);
-
-  // Primary group (first one the user belongs to, for predictions)
   const primaryGroupId = memberships[0]?.group_id || null;
 
-  // Upcoming matches (next 5)
   const { data: allMatches = [] } = useQuery({
     queryKey: ['matches-upcoming'],
     queryFn: () => base44.entities.Match.filter({ estado: 'programado' }, 'fecha_kickoff', 10),
   });
 
-  // Predictions for primary group
   const { data: myPredictions = [] } = useQuery({
     queryKey: ['predictions-home', user?.id, primaryGroupId],
     queryFn: () => base44.entities.Prediction.filter({ user_id: user?.id, group_id: primaryGroupId }),
@@ -62,30 +57,13 @@ export default function Home() {
   const savePrediction = useMutation({
     mutationFn: async ({ matchId, data }) => {
       const existing = myPredictions.find(p => p.match_id === matchId);
-      if (existing) {
-        return base44.entities.Prediction.update(existing.id, data);
-      }
+      if (existing) return base44.entities.Prediction.update(existing.id, data);
       return base44.entities.Prediction.create({
         ...data,
         user_id: user.id,
         group_id: primaryGroupId,
         match_id: matchId,
       });
-    },
-    onMutate: async ({ matchId, data }) => {
-      await queryClient.cancelQueries({ queryKey: ['predictions-home', user?.id, primaryGroupId] });
-      const previous = queryClient.getQueryData(['predictions-home', user?.id, primaryGroupId]);
-      queryClient.setQueryData(['predictions-home', user?.id, primaryGroupId], (old = []) => {
-        const existing = old.find(p => p.match_id === matchId);
-        if (existing) return old.map(p => p.match_id === matchId ? { ...p, ...data } : p);
-        return [...old, { match_id: matchId, user_id: user?.id, group_id: primaryGroupId, ...data, id: `optimistic-${matchId}` }];
-      });
-      return { previous };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(['predictions-home', user?.id, primaryGroupId], context.previous);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['predictions-home'] });
@@ -105,147 +83,216 @@ export default function Home() {
   const getPrediction = (matchId) => myPredictions.find(p => p.match_id === matchId);
 
   return (
-    <div className="p-4">
-      {/* Header */}
-      <div className="pt-6 pb-8 text-center">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4"
-        >
-          <span className="text-3xl">⚽</span>
-        </motion.div>
-        <h1 className="text-2xl font-bold">Quiniela Mundial</h1>
-        <p className="text-sm text-muted-foreground mt-1">2026 · USA · Canadá · México</p>
-        {user && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Hola, <span className="font-medium text-foreground">{user.full_name || user.email}</span> 👋
-          </p>
-        )}
-        {user && (
-          <div className="flex items-center justify-center gap-3 mt-3">
-            <button
-              onClick={() => base44.auth.logout()}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LogOut className="w-3 h-3" /> Cerrar sesión
-            </button>
-            <span className="text-muted-foreground/40 text-xs">·</span>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button className="flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive transition-colors">
-                  <Trash2 className="w-3 h-3" /> Eliminar cuenta
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción no se puede deshacer. Perderás todos tus pronósticos y datos asociados. Contacta al administrador si necesitas eliminar tus datos permanentemente.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Sí, cerrar sesión
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+    <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+
+      {/* Brutalist hero header */}
+      <div
+        style={{
+          borderBottom: `3px solid ${INK}`,
+          background: INK,
+          padding: '28px 16px 20px',
+          position: 'relative',
+        }}
+      >
+        {/* Color stripe */}
+        <div style={{ display: 'flex', height: 5, marginBottom: 20, border: `1px solid rgba(255,255,255,0.2)` }}>
+          {[RED, YELLOW, BLUE, GREEN].map(c => (
+            <div key={c} style={{ flex: 1, background: c }} />
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div>
+            {user && (
+              <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#9b968a', marginBottom: 6 }}>
+                Hola, {user.full_name || user.email}
+              </p>
+            )}
+            <h1 style={{
+              fontSize: 42,
+              fontWeight: 700,
+              lineHeight: 0.88,
+              letterSpacing: '-0.04em',
+              textTransform: 'uppercase',
+              color: CONCRETE,
+            }}>
+              Quiniela<br />
+              <span style={{ color: RED }}>Mundial.</span>
+            </h1>
           </div>
-        )}
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 56, fontWeight: 700, letterSpacing: '-0.05em', lineHeight: 0.85, color: YELLOW }}>
+              26
+            </div>
+            <p style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', marginTop: 4 }}>
+              FIFA World Cup
+            </p>
+          </div>
+        </div>
       </div>
 
-
-
-      {/* Quick Actions */}
-      <div className={`grid gap-3 mb-6 ${user?.role === 'admin' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      <div className="p-4">
+        {/* Admin link */}
         {user?.role === 'admin' && (
-          <Link to="/create-group">
-            <Card className="p-4 text-center hover:shadow-md transition-all border-primary/20 bg-primary/5 active:scale-[0.97]">
-              <Plus className="w-6 h-6 mx-auto text-primary mb-2" />
-              <p className="text-sm font-semibold">Nuevo grupo</p>
-            </Card>
+          <Link to="/admin" className="block mb-4">
+            <div
+              style={{
+                border: `2px solid ${INK}`,
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: CONCRETE,
+                boxShadow: `2px 2px 0 ${INK}`,
+              }}
+            >
+              <Settings style={{ width: 14, height: 14, color: '#9b968a' }} />
+              <span style={{ fontSize: 11, color: '#9b968a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Panel de administración
+              </span>
+            </div>
           </Link>
         )}
-        <Link to="/join">
-          <Card className="p-4 text-center hover:shadow-md transition-all border-accent/30 bg-accent/5 active:scale-[0.97]">
-            <Users className="w-6 h-6 mx-auto text-accent mb-2" />
-            <p className="text-sm font-semibold">Unirme con código</p>
-          </Card>
-        </Link>
+
+        {/* Quick actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 24, border: `2px solid ${INK}` }}>
+          <Link to="/create-group" style={{ textDecoration: 'none' }}>
+            <div
+              style={{
+                padding: '20px 16px',
+                textAlign: 'center',
+                borderRight: `2px solid ${INK}`,
+                background: CONCRETE,
+                transition: 'background 0.1s',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = RED}
+              onMouseLeave={e => e.currentTarget.style.background = CONCRETE}
+            >
+              <Plus style={{ width: 22, height: 22, margin: '0 auto 8px', color: INK }} />
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: INK }}>
+                Nuevo grupo
+              </p>
+            </div>
+          </Link>
+          <Link to="/join" style={{ textDecoration: 'none' }}>
+            <div
+              style={{
+                padding: '20px 16px',
+                textAlign: 'center',
+                background: CONCRETE,
+                transition: 'background 0.1s',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = BLUE}
+              onMouseLeave={e => e.currentTarget.style.background = CONCRETE}
+            >
+              <Users style={{ width: 22, height: 22, margin: '0 auto 8px', color: INK }} />
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: INK }}>
+                Unirme
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Upcoming matches */}
+        {upcomingMatches.length > 0 && (
+          <div className="mb-6">
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 12, borderBottom: `2px solid ${INK}`, paddingBottom: 8,
+            }}>
+              <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: INK }}>
+                Próximos partidos
+              </h2>
+              {!primaryGroupId && (
+                <span style={{ fontSize: 9, color: '#9b968a', letterSpacing: '0.08em' }}>Únete a un grupo para pronosticar</span>
+              )}
+            </div>
+            <div>
+              {upcomingMatches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  prediction={getPrediction(match.id)}
+                  onClick={primaryGroupId ? setSelectedMatch : undefined}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* My groups */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 12, borderBottom: `2px solid ${INK}`, paddingBottom: 8,
+        }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: INK }}>
+            Mis grupos
+          </h2>
+        </div>
+
+        {groups.length === 0 ? (
+          <div
+            style={{
+              border: `2px dashed ${INK}`,
+              padding: 32,
+              textAlign: 'center',
+              background: CONCRETE,
+            }}
+          >
+            <Trophy style={{ width: 28, height: 28, margin: '0 auto 12px', color: '#9b968a' }} />
+            <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.6 }}>
+              Aún no perteneces a ningún grupo.
+            </p>
+            <p style={{ fontSize: 11, color: '#9b968a', marginTop: 4 }}>
+              Crea uno o únete con un código de invitación.
+            </p>
+          </div>
+        ) : (
+          <div style={{ border: `2px solid ${INK}` }}>
+            {groups.map((group, idx) => {
+              const membership = getMembershipForGroup(group.id);
+              return (
+                <Link key={group.id} to={`/group/${group.id}`} style={{ textDecoration: 'none' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '14px 16px',
+                      borderBottom: idx < groups.length - 1 ? `2px solid ${INK}` : 'none',
+                      background: CONCRETE,
+                      transition: 'background 0.1s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#fff'}
+                    onMouseLeave={e => e.currentTarget.style.background = CONCRETE}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {group.nombre}
+                      </h3>
+                      <p style={{ fontSize: 9, color: '#9b968a', letterSpacing: '0.1em', marginTop: 2, fontFamily: 'monospace' }}>
+                        {group.codigo_invitacion}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ textAlign: 'right', paddingRight: 8, borderRight: `2px solid ${INK}` }}>
+                        <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.04em', color: INK, lineHeight: 1 }}>
+                          {membership?.puntos_totales || 0}
+                        </p>
+                        <p style={{ fontSize: 8, color: '#9b968a', letterSpacing: '0.14em', textTransform: 'uppercase' }}>pts</p>
+                      </div>
+                      <ArrowRight style={{ width: 16, height: 16, color: '#9b968a' }} />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Upcoming Matches */}
-      {upcomingMatches.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold">Próximos partidos</h2>
-            {!primaryGroupId && (
-              <span className="text-xs text-muted-foreground">Únete a un grupo para pronosticar</span>
-            )}
-          </div>
-          <div className="space-y-3">
-            {upcomingMatches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                prediction={getPrediction(match.id)}
-                onClick={primaryGroupId ? setSelectedMatch : undefined}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* My Groups */}
-      <h2 className="text-lg font-bold mb-3">Mis grupos</h2>
-
-      {groups.length === 0 ? (
-        <Card className="p-8 text-center border-dashed">
-          <Trophy className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-          <p className="text-muted-foreground text-sm">
-            Aún no perteneces a ningún grupo.
-          </p>
-          <p className="text-muted-foreground text-xs mt-1">
-            Crea uno o únete con un código de invitación.
-          </p>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {groups.map((group) => {
-            const membership = getMembershipForGroup(group.id);
-            return (
-              <motion.div
-                key={group.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <Link to={`/group/${group.id}`}>
-                  <Card className="p-4 hover:shadow-md transition-all active:scale-[0.98]">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">{group.nombre}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Código: {group.codigo_invitacion}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-primary">{membership?.puntos_totales || 0}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">pts</p>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-      {/* Prediction Modal */}
       <PredictionModal
         match={selectedMatch}
         prediction={selectedMatch ? getPrediction(selectedMatch.id) : null}
