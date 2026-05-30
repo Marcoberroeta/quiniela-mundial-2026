@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Users, Plus, ArrowRight, ChevronRight } from 'lucide-react';
+import { Trophy, Users, Plus, ArrowRight, LogOut, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -11,6 +12,10 @@ import PredictionModal from '@/components/PredictionModal';
 import { toast } from 'sonner';
 
 export default function Home() {
+  const handleDeleteAccount = async () => {
+    await base44.auth.logout();
+  };
+
   const { data: user } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
@@ -67,6 +72,21 @@ export default function Home() {
         match_id: matchId,
       });
     },
+    onMutate: async ({ matchId, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['predictions-home', user?.id, primaryGroupId] });
+      const previous = queryClient.getQueryData(['predictions-home', user?.id, primaryGroupId]);
+      queryClient.setQueryData(['predictions-home', user?.id, primaryGroupId], (old = []) => {
+        const existing = old.find(p => p.match_id === matchId);
+        if (existing) return old.map(p => p.match_id === matchId ? { ...p, ...data } : p);
+        return [...old, { match_id: matchId, user_id: user?.id, group_id: primaryGroupId, ...data, id: `optimistic-${matchId}` }];
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['predictions-home', user?.id, primaryGroupId], context.previous);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['predictions-home'] });
       setSelectedMatch(null);
@@ -101,6 +121,38 @@ export default function Home() {
           <p className="text-sm text-muted-foreground mt-2">
             Hola, <span className="font-medium text-foreground">{user.full_name || user.email}</span> 👋
           </p>
+        )}
+        {user && (
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <button
+              onClick={() => base44.auth.logout()}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LogOut className="w-3 h-3" /> Cerrar sesión
+            </button>
+            <span className="text-muted-foreground/40 text-xs">·</span>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button className="flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive transition-colors">
+                  <Trash2 className="w-3 h-3" /> Eliminar cuenta
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. Perderás todos tus pronósticos y datos asociados. Contacta al administrador si necesitas eliminar tus datos permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Sí, cerrar sesión
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </div>
 
