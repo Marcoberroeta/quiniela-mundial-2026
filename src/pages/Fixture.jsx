@@ -7,7 +7,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, AlertCircle } from 'lucide-react';
+import BracketView from '@/components/BracketView';
 
 const GRUPOS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 
@@ -165,40 +166,86 @@ function GroupTab({ letra, dbMatches }) {
 }
 
 export default function Fixture() {
+  const [activeTab, setActiveTab] = useState('grupos');
   const [activeGroup, setActiveGroup] = useState('A');
 
   const { data: dbMatches = [] } = useQuery({
     queryKey: ['fixture-matches'],
-    queryFn: () => base44.entities.Match.filter({ fase: 'grupos' }, 'fecha_kickoff', 200),
+    queryFn: () => base44.entities.Match.filter({}, 'fecha_kickoff', 200),
   });
 
+  const groupMatches = useMemo(() => 
+    dbMatches.filter(m => m.fase === 'grupos'),
+    [dbMatches]
+  );
+
+  const knockoutMatches = useMemo(() => 
+    dbMatches.filter(m => m.fase !== 'grupos').sort((a, b) => a.match_number - b.match_number),
+    [dbMatches]
+  );
+
   return (
-    <div className="p-4 pb-24">
-      <div className="pt-4 mb-5">
-        <h1 className="text-xl font-bold">Fixture · Fase de Grupos</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Mundial 2026 · Horarios CDM (UTC-6)</p>
+    <div className="pb-24">
+      <div className="p-4 bg-muted/40 border-b border-border sticky top-0 z-20">
+        <h1 className="text-xl font-bold">Fixture · Mundial 2026</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Horarios CDM (UTC-6)</p>
       </div>
 
-      <Tabs value={activeGroup} onValueChange={setActiveGroup}>
-        {/* Scrollable group selector */}
-        <div className="overflow-x-auto pb-2 mb-4 -mx-4 px-4">
-          <TabsList className="inline-flex gap-1 h-9 bg-muted/50 p-1">
-            {GRUPOS.map(g => (
-              <TabsTrigger key={g} value={g} className="h-7 px-3 text-xs font-bold">
-                {g}
-              </TabsTrigger>
-            ))}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Tab triggers */}
+        <div className="overflow-x-auto border-b border-border sticky top-12 z-10 bg-background">
+          <TabsList className="inline-flex gap-0 h-10 bg-transparent p-0 w-full justify-start rounded-none border-0">
+            <TabsTrigger
+              value="grupos"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-muted/30 px-4"
+            >
+              📊 Grupos
+            </TabsTrigger>
+            <TabsTrigger
+              value="llaves"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-muted/30 px-4"
+            >
+              ⚽ Llaves
+            </TabsTrigger>
           </TabsList>
         </div>
 
-        {GRUPOS.map(g => (
-          <TabsContent key={g} value={g}>
-            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
-              Grupo {g}
-            </h2>
-            <GroupTab letra={g} dbMatches={dbMatches} />
-          </TabsContent>
-        ))}
+        {/* Grupos tab */}
+        <TabsContent value="grupos" className="p-4">
+          <div className="mb-5">
+            <h2 className="text-lg font-bold mb-3">Fase de Grupos</h2>
+            
+            {/* Group selector */}
+            <div className="overflow-x-auto pb-3 mb-4">
+              <div className="inline-flex gap-1">
+                {GRUPOS.map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setActiveGroup(g)}
+                    className={`h-9 px-3 text-sm font-bold rounded-lg transition-colors ${
+                      activeGroup === g
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grupo content */}
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Grupo {activeGroup}
+            </h3>
+            <GroupTab letra={activeGroup} dbMatches={groupMatches} />
+          </div>
+        </TabsContent>
+
+        {/* Llaves tab */}
+        <TabsContent value="llaves" className="p-0">
+          <BracketView dbMatches={knockoutMatches} />
+        </TabsContent>
       </Tabs>
     </div>
   );
