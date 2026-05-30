@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TEAM_FLAGS, FASE_LABELS, KNOCKOUT_MATCHES } from '@/lib/matchData';
@@ -16,12 +16,8 @@ const PHASES = [
   { key: 'final', label: 'Final', matches_count: 1 },
 ];
 
-interface BracketMatchProps {
-  match: any;
-}
-
-function BracketMatch({ match }: BracketMatchProps) {
-  const flag = (t: string) => TEAM_FLAGS[t] || '🏳️';
+function BracketMatch({ match }) {
+  const flag = (t) => TEAM_FLAGS[t] || '🏳️';
   const kickoff = new Date(match.fecha_kickoff);
   const finished = match.estado === 'finalizado';
   const live = match.estado === 'en_vivo';
@@ -110,7 +106,7 @@ function BracketMatch({ match }: BracketMatchProps) {
   );
 }
 
-function PhaseColumn({ phase, matches }: { phase: any; matches: any[] }) {
+function PhaseColumn({ phase, matches }) {
   return (
     <div className="flex-shrink-0 w-56">
       <div className="sticky top-0 bg-background/80 backdrop-blur z-10 pb-2 mb-2">
@@ -130,13 +126,9 @@ function PhaseColumn({ phase, matches }: { phase: any; matches: any[] }) {
   );
 }
 
-interface BracketViewProps {
-  dbMatches: any[];
-}
-
-function BracketView({ dbMatches }: BracketViewProps) {
+function BracketView({ dbMatches }) {
   const byPhase = useMemo(() => {
-    const map: Record<string, any[]> = {};
+    const map = {};
     PHASES.forEach(p => {
       map[p.key] = dbMatches
         .filter(m => m.fase === p.key)
@@ -177,24 +169,17 @@ export default function BracketPage() {
   const { data: knockoutMatches = [] } = useQuery({
     queryKey: ['knockout-matches'],
     queryFn: () =>
-      base44.entities.Match.filter(
-        { fase: 'ronda_32' },
-        'match_number',
-        200
-      ).then(matches => {
-        // Fetch all knockout phases
-        return Promise.all([
-          matches,
-          base44.entities.Match.filter({ fase: 'octavos' }, 'match_number', 100),
-          base44.entities.Match.filter({ fase: 'cuartos' }, 'match_number', 100),
-          base44.entities.Match.filter({ fase: 'semis' }, 'match_number', 100),
-          base44.entities.Match.filter({ fase: 'final' }, 'match_number', 100),
-        ]).then(([r32, oct, cuart, semi, fin]) =>
-          [...r32, ...oct, ...cuart, ...semi, ...fin].sort(
-            (a, b) => a.match_number - b.match_number
-          )
-        );
-      }),
+      Promise.all([
+        base44.entities.Match.filter({ fase: 'ronda_32' }, 'match_number', 200),
+        base44.entities.Match.filter({ fase: 'octavos' }, 'match_number', 100),
+        base44.entities.Match.filter({ fase: 'cuartos' }, 'match_number', 100),
+        base44.entities.Match.filter({ fase: 'semis' }, 'match_number', 100),
+        base44.entities.Match.filter({ fase: 'final' }, 'match_number', 100),
+      ]).then(([r32, oct, cuart, semi, fin]) =>
+        [...r32, ...oct, ...cuart, ...semi, ...fin].sort(
+          (a, b) => a.match_number - b.match_number
+        )
+      ),
   });
 
   return (

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Users, Plus, ArrowRight, Settings, ChevronRight } from 'lucide-react';
+import { Trophy, Users, Plus, ArrowRight, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -104,15 +104,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* Admin link */}
-      {user?.role === 'admin' && (
-        <Link to="/admin" className="block mb-4">
-          <Card className="p-3 flex items-center gap-2 border-border/40 hover:bg-muted/50 transition-colors">
-            <Settings className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Panel de administración</span>
-          </Card>
-        </Link>
-      )}
+
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3 mb-6">

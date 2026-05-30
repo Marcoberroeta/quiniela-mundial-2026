@@ -14,6 +14,8 @@ import Admin from './pages/Admin';
 import Fixture from './pages/Fixture';
 import GlobalLeaderboard from './pages/GlobalLeaderboard';
 import AppShell from './components/AppShell';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 // Protected route component
 const ProtectedRoute = ({ children, requiredRole }) => {
