@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Copy, Check, Settings, ChevronDown } from 'lucide-react';
@@ -36,6 +36,36 @@ export default function CreateGroup() {
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [user, setUser] = useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(u => setUser(u));
+  }, []);
+
+  if (user && user.role !== 'admin') {
+    return (
+      <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '48px 16px', textAlign: 'center' }}>
+        <p style={{ fontSize: 48, marginBottom: 16 }}>🔒</p>
+        <p style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: INK, marginBottom: 8 }}>
+          Acceso restringido
+        </p>
+        <p style={{ fontSize: 11, color: '#9b968a' }}>
+          Solo el administrador puede crear grupos.<br />Únete con un código de invitación.
+        </p>
+        <button
+          onClick={() => navigate('/join')}
+          style={{
+            marginTop: 24, height: 44, padding: '0 24px',
+            border: `2px solid ${INK}`, background: INK, color: CONCRETE,
+            fontWeight: 700, fontSize: 12, letterSpacing: '0.12em',
+            textTransform: 'uppercase', cursor: 'pointer',
+          }}
+        >
+          Unirme con código
+        </button>
+      </div>
+    );
+  }
 
   const handleCreate = async () => {
     if (!nombre.trim()) return;

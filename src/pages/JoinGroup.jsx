@@ -13,27 +13,20 @@ export default function JoinGroup() {
   const navigate = useNavigate();
   const { code } = useParams();
   const [inputCode, setInputCode] = useState(code || '');
+  const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [loading, setLoading] = useState(false);
-  const [autoJoining, setAutoJoining] = useState(!!code);
 
-  useEffect(() => {
-    if (code) handleJoin(code);
-  }, [code]);
+  const isValid = inputCode.length === 6 && nombre.trim().length >= 2 && telefono.trim().length >= 8;
 
-  const handleJoin = async (joinCode) => {
-    const trimmed = (joinCode || inputCode).toUpperCase().trim();
-    if (trimmed.length !== 6) {
-      toast.error('El código debe tener 6 caracteres');
-      setAutoJoining(false);
-      return;
-    }
+  const handleJoin = async () => {
+    const trimmed = inputCode.toUpperCase().trim();
     setLoading(true);
     const user = await base44.auth.me();
     const groups = await base44.entities.Group.filter({ codigo_invitacion: trimmed });
     if (!groups.length) {
       toast.error('Grupo no encontrado');
       setLoading(false);
-      setAutoJoining(false);
       return;
     }
     const group = groups[0];
@@ -46,31 +39,29 @@ export default function JoinGroup() {
     await base44.entities.GroupMember.create({
       group_id: group.id,
       user_id: user.id,
-      user_nombre: user.full_name || '',
+      user_nombre: nombre.trim(),
       user_email: user.email,
+      user_telefono: telefono.trim(),
       puntos_totales: 0,
     });
     toast.success(`¡Te uniste a "${group.nombre}"!`);
     navigate(`/group/${group.id}`);
   };
 
-  if (autoJoining) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: 32, height: 32, border: `3px solid #c7c3b8`, borderTop: `3px solid ${BLUE}`,
-            borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px',
-          }} />
-          <p style={{ fontSize: 11, color: '#9b968a', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            Uniéndote al grupo...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const isValid = inputCode.length === 6;
+  const inputStyle = (focused) => ({
+    width: '100%',
+    height: 48,
+    border: `2px solid ${INK}`,
+    background: CONCRETE,
+    color: INK,
+    outline: 'none',
+    padding: '0 12px',
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    marginBottom: 14,
+    boxSizing: 'border-box',
+  });
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '16px 16px 96px' }}>
@@ -93,7 +84,7 @@ export default function JoinGroup() {
           border: `3px solid ${INK}`,
           background: BLUE,
           color: '#fff',
-          padding: '20px 20px 20px',
+          padding: '20px',
           marginBottom: 28,
           boxShadow: `5px 5px 0 ${INK}`,
           display: 'flex',
@@ -101,37 +92,39 @@ export default function JoinGroup() {
           gap: 14,
         }}
       >
-        <div
-          style={{
-            width: 48, height: 48,
-            border: `2px solid rgba(255,255,255,0.4)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
+        <div style={{
+          width: 48, height: 48,
+          border: `2px solid rgba(255,255,255,0.4)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
           <Users style={{ width: 24, height: 24, color: '#fff' }} />
         </div>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 1 }}>
-            Unirme a un grupo
+            Unirme al grupo
           </h1>
           <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.1em', marginTop: 4 }}>
-            Código de 6 caracteres
+            Llena tus datos para participar
           </p>
         </div>
       </div>
 
-      {/* Input area */}
+      {/* Form */}
       <div
         style={{
           border: `3px solid ${INK}`,
           background: CONCRETE,
           padding: 20,
           boxShadow: `4px 4px 0 ${INK}`,
-          maxWidth: 360,
+          maxWidth: 400,
           margin: '0 auto',
         }}
       >
+        {/* Code */}
+        <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', display: 'block', marginBottom: 8 }}>
+          Código de invitación
+        </label>
         <input
           value={inputCode}
           onChange={(e) => setInputCode(e.target.value.toUpperCase().slice(0, 6))}
@@ -140,22 +133,51 @@ export default function JoinGroup() {
           style={{
             width: '100%',
             textAlign: 'center',
-            fontSize: 32,
+            fontSize: 28,
             fontWeight: 700,
             fontFamily: 'monospace',
             letterSpacing: '0.3em',
-            height: 64,
+            height: 58,
             border: `2px solid ${INK}`,
-            background: CONCRETE,
+            background: '#fff',
             color: INK,
             outline: 'none',
-            marginBottom: 16,
+            marginBottom: 20,
+            boxSizing: 'border-box',
           }}
           onFocus={e => e.target.style.borderColor = BLUE}
           onBlur={e => e.target.style.borderColor = INK}
         />
+
+        {/* Nombre */}
+        <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', display: 'block', marginBottom: 8 }}>
+          Tu nombre
+        </label>
+        <input
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="Ej: Juan García"
+          style={{ ...inputStyle(), marginBottom: 20 }}
+          onFocus={e => e.target.style.borderColor = BLUE}
+          onBlur={e => e.target.style.borderColor = INK}
+        />
+
+        {/* Teléfono */}
+        <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', display: 'block', marginBottom: 8 }}>
+          Teléfono
+        </label>
+        <input
+          value={telefono}
+          onChange={(e) => setTelefono(e.target.value)}
+          placeholder="Ej: 5512345678"
+          type="tel"
+          style={{ ...inputStyle(), marginBottom: 24 }}
+          onFocus={e => e.target.style.borderColor = BLUE}
+          onBlur={e => e.target.style.borderColor = INK}
+        />
+
         <button
-          onClick={() => handleJoin()}
+          onClick={handleJoin}
           disabled={!isValid || loading}
           style={{
             width: '100%', height: 52,
@@ -167,7 +189,7 @@ export default function JoinGroup() {
             boxShadow: !isValid || loading ? 'none' : `4px 4px 0 ${INK}`,
           }}
         >
-          {loading ? 'Buscando...' : 'Unirme'}
+          {loading ? 'Uniéndome...' : 'Unirme al grupo'}
         </button>
       </div>
     </div>
