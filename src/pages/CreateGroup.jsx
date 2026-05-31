@@ -70,10 +70,9 @@ export default function CreateGroup() {
   }
 
   const handleCreate = async () => {
-    if (!nombre.trim()) return;
+    if (!nombre.trim() || !user) return;
     setLoading(true);
     const codigo = generateInviteCode();
-    const user = await base44.auth.me();
     const group = await base44.entities.Group.create({
       nombre: nombre.trim(),
       codigo_invitacion: codigo,
