@@ -204,7 +204,7 @@ export default function Fixture() {
 
   const { data: dbMatches = [] } = useQuery({
     queryKey: ['fixture-matches'],
-    queryFn: () => base44.entities.Match.filter({}, 'fecha_kickoff', 200),
+    queryFn: () => base44.entities.Match.list('fecha_kickoff', 200),
   });
 
   const groupMatches = useMemo(() => dbMatches.filter(m => m.fase === 'grupos'), [dbMatches]);
