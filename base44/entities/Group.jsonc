@@ -10,6 +10,14 @@
       "type": "string",
       "description": "C\u00f3digo de 6 caracteres alfanum\u00e9ricos \u00fanico para invitaci\u00f3n"
     },
+    "costo_entrada": {
+      "type": "number",
+      "description": "Costo de entrada por participante (MXN)"
+    },
+    "premios": {
+      "type": "string",
+      "description": "Descripci\u00f3n de los premios y repartici\u00f3n"
+    },
     "reglas_puntos": {
       "type": "object",
       "description": "Reglas de puntos configurables",

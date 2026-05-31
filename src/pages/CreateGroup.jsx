@@ -31,6 +31,8 @@ const RULE_LABELS = {
 export default function CreateGroup() {
   const navigate = useNavigate();
   const [nombre, setNombre] = useState('');
+  const [costoEntrada, setCostoEntrada] = useState('');
+  const [premios, setPremios] = useState('');
   const [reglas, setReglas] = useState({ ...DEFAULT_RULES });
   const [rulesOpen, setRulesOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,6 +78,8 @@ export default function CreateGroup() {
       nombre: nombre.trim(),
       codigo_invitacion: codigo,
       reglas_puntos: reglas,
+      costo_entrada: costoEntrada ? parseFloat(costoEntrada) : undefined,
+      premios: premios.trim() || undefined,
     });
     await base44.entities.GroupMember.create({
       group_id: group.id,
@@ -207,6 +211,50 @@ export default function CreateGroup() {
             placeholder="Ej: La Oficina, Los Primos..."
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', display: 'block', marginBottom: 8 }}>
+              Costo de entrada ($)
+            </label>
+            <Input
+              type="number"
+              placeholder="Ej: 500"
+              value={costoEntrada}
+              onChange={(e) => setCostoEntrada(e.target.value)}
+              min={0}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', display: 'block', marginBottom: 8 }}>
+              &nbsp;
+            </label>
+            <div style={{ fontSize: 11, color: '#9b968a', paddingTop: 10 }}>por participante</div>
+          </div>
+        </div>
+
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b968a', display: 'block', marginBottom: 8 }}>
+            Premios y repartición
+          </label>
+          <textarea
+            placeholder="Ej: 1er lugar 70%, 2do 20%, 3er 10%. En empate se divide el premio entre los empatados."
+            value={premios}
+            onChange={(e) => setPremios(e.target.value)}
+            rows={3}
+            style={{
+              width: '100%',
+              border: '2px solid #14130f',
+              background: '#e4e1d8',
+              padding: '8px 12px',
+              fontSize: 13,
+              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+              resize: 'vertical',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
 

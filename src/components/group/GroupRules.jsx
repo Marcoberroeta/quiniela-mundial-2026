@@ -239,90 +239,47 @@ export default function GroupRules({ group, members }) {
       </DarkBlock>
 
       {/* Awards */}
-      <SectionTitle>Premios y repartición</SectionTitle>
+      {(group.costo_entrada || group.premios) && (
+        <>
+          <SectionTitle>Premios y entrada</SectionTitle>
 
-      {/* Buy-in */}
-      <DarkBlock accent={YELLOW}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <Gift style={{ width: 16, height: 16, color: YELLOW, flexShrink: 0 }} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Entrada por participante
-          </span>
-        </div>
-        <div style={{ textAlign: 'center', padding: '12px 0' }}>
-          <p style={{ fontSize: 48, fontWeight: 700, letterSpacing: '-0.04em', color: YELLOW, lineHeight: 1 }}>
-            $500
-          </p>
-          <p style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>
-            MXN · por jugador
-          </p>
-        </div>
-        <p style={{ fontSize: 11, color: '#9b968a', textAlign: 'center', lineHeight: 1.5 }}>
-          El pozo total = <span style={{ color: CONCRETE, fontWeight: 700 }}>$500 × número de participantes</span>
-        </p>
-      </DarkBlock>
+          {group.costo_entrada && (
+            <DarkBlock accent={YELLOW}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <Gift style={{ width: 16, height: 16, color: YELLOW, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Costo de entrada
+                </span>
+              </div>
+              <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                <p style={{ fontSize: 44, fontWeight: 700, letterSpacing: '-0.04em', color: YELLOW, lineHeight: 1 }}>
+                  ${group.costo_entrada.toLocaleString('es-MX')}
+                </p>
+                <p style={{ fontSize: 10, color: '#9b968a', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>
+                  MXN · por jugador
+                </p>
+              </div>
+              <p style={{ fontSize: 11, color: '#9b968a', textAlign: 'center', lineHeight: 1.5, marginTop: 8 }}>
+                Pozo total = <span style={{ color: CONCRETE, fontWeight: 700 }}>${group.costo_entrada.toLocaleString('es-MX')} × {members.length} participantes = ${(group.costo_entrada * members.length).toLocaleString('es-MX')}</span>
+              </p>
+            </DarkBlock>
+          )}
 
-      {/* Prize distribution */}
-      <DarkBlock accent={GREEN}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <Trophy style={{ width: 16, height: 16, color: YELLOW, flexShrink: 0 }} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Reparto del pozo
-          </span>
-        </div>
-
-        {[
-          { place: '1er lugar', pct: '70%', color: YELLOW, medal: '🥇' },
-          { place: '2do lugar', pct: '20%', color: '#c0c0c0', medal: '🥈' },
-          { place: '3er lugar', pct: '10%', color: '#cd7f32', medal: '🥉' },
-        ].map(({ place, pct, color, medal }) => (
-          <div
-            key={place}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 12px',
-              marginBottom: 6,
-              background: 'rgba(255,255,255,0.05)',
-              border: `1px solid rgba(255,255,255,0.1)`,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18 }}>{medal}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                {place}
-              </span>
-            </div>
-            <span style={{ fontSize: 20, fontWeight: 700, color, letterSpacing: '-0.02em' }}>
-              {pct}
-            </span>
-          </div>
-        ))}
-      </DarkBlock>
-
-      {/* Tie rule */}
-      <DarkBlock accent={BLUE}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>⚖️</span>
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              En caso de empate
-            </p>
-            <p style={{ fontSize: 11, color: '#9b968a', lineHeight: 1.6 }}>
-              Si dos o más jugadores terminan con los mismos puntos en un lugar premiado,{' '}
-              <span style={{ color: CONCRETE, fontWeight: 700 }}>el premio de ese lugar se divide en partes iguales</span>{' '}
-              entre los empatados.
-            </p>
-            <div style={{
-              marginTop: 10, padding: '8px 12px',
-              background: '#111', border: '1px solid rgba(255,255,255,0.08)',
-              fontSize: 11, color: '#9b968a', lineHeight: 1.6,
-            }}>
-              <span style={{ color: '#9b968a' }}>Ej. 3 jugadores empatan en 1er lugar →</span>{' '}
-              <span style={{ color: YELLOW, fontWeight: 700 }}>el 70% se divide entre los 3</span>
-            </div>
-          </div>
-        </div>
-      </DarkBlock>
+          {group.premios && (
+            <DarkBlock accent={GREEN}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <Trophy style={{ width: 16, height: 16, color: YELLOW, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: CONCRETE, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Premios y repartición
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                {group.premios}
+              </p>
+            </DarkBlock>
+          )}
+        </>
+      )}
 
       {/* Members */}
       <SectionTitle>Miembros ({members.length})</SectionTitle>
