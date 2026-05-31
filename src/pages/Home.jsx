@@ -155,26 +155,28 @@ export default function Home() {
         )}
 
         {/* Quick actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 24, border: `2px solid ${INK}` }}>
-          <Link to="/create-group" style={{ textDecoration: 'none' }}>
-            <div
-              style={{
-                padding: '20px 16px',
-                textAlign: 'center',
-                borderRight: `2px solid ${INK}`,
-                background: CONCRETE,
-                transition: 'background 0.1s',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = RED}
-              onMouseLeave={e => e.currentTarget.style.background = CONCRETE}
-            >
-              <Plus style={{ width: 22, height: 22, margin: '0 auto 8px', color: INK }} />
-              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: INK }}>
-                Nuevo grupo
-              </p>
-            </div>
-          </Link>
+        <div style={{ display: 'grid', gridTemplateColumns: user?.role === 'admin' ? '1fr 1fr' : '1fr', gap: 0, marginBottom: 24, border: `2px solid ${INK}` }}>
+          {user?.role === 'admin' && (
+            <Link to="/create-group" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  padding: '20px 16px',
+                  textAlign: 'center',
+                  borderRight: `2px solid ${INK}`,
+                  background: CONCRETE,
+                  transition: 'background 0.1s',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = RED}
+                onMouseLeave={e => e.currentTarget.style.background = CONCRETE}
+              >
+                <Plus style={{ width: 22, height: 22, margin: '0 auto 8px', color: INK }} />
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: INK }}>
+                  Nuevo grupo
+                </p>
+              </div>
+            </Link>
+          )}
           <Link to="/join" style={{ textDecoration: 'none' }}>
             <div
               style={{
