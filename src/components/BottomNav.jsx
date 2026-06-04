@@ -1,12 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, CalendarDays, Globe } from 'lucide-react';
+import { Home, CalendarDays, Globe } from 'lucide-react';
 
 const navItems = [
   { path: '/',        label: 'INICIO',  icon: Home,         color: '#E2001A' },
   { path: '/fixture', label: 'FIXTURE', icon: CalendarDays, color: '#0E63B3' },
   { path: '/ranking', label: 'RANKING', icon: Globe,         color: '#FFC20E' },
-  { path: '/groups',  label: 'GRUPOS',  icon: Users,         color: '#00923F' },
 ];
 
 export default function BottomNav() {
@@ -19,8 +18,7 @@ export default function BottomNav() {
     >
       <div className="flex max-w-lg mx-auto">
         {navItems.map(({ path, label, icon: Icon, color }, idx) => {
-          const isActive = location.pathname === path ||
-            (path === '/groups' && location.pathname.startsWith('/group'));
+          const isActive = location.pathname === path;
           const isYellow = color === '#FFC20E';
 
           return (

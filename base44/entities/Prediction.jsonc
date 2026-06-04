@@ -6,10 +6,6 @@
       "type": "string",
       "description": "ID del usuario"
     },
-    "group_id": {
-      "type": "string",
-      "description": "ID del grupo"
-    },
     "match_id": {
       "type": "string",
       "description": "ID del partido"
@@ -38,7 +34,6 @@
   },
   "required": [
     "user_id",
-    "group_id",
     "match_id"
   ]
 }

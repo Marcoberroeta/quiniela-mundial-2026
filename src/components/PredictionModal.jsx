@@ -105,10 +105,7 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
 
   const isKnockout = match?.fase !== 'grupos';
   const kickoff = match ? new Date(match.fecha_kickoff) : new Date();
-  const WORLD_CUP_START = new Date('2026-06-11T05:59:00Z');
-  const lockTime = match?.fase === 'grupos'
-    ? WORLD_CUP_START
-    : new Date(kickoff.getTime() - 15 * 60 * 1000);
+  const lockTime = new Date(kickoff.getTime() - 15 * 60 * 1000);
   const isLocked = new Date() >= lockTime || !!prediction;
   const flag = (team) => TEAM_FLAGS[team] || '🏳️';
 
@@ -235,9 +232,7 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
                     : ''}.
                 </p>
                 <p style={{ fontSize: 10, color: '#9b968a', marginTop: 6 }}>
-                  {match?.fase === 'grupos'
-                    ? 'Fase de grupos: cierre 1 día antes del inicio del Mundial.'
-                    : 'Eliminatorias: cierre 15 min antes del kickoff.'}
+                  Pronósticos cierran 15 min antes del kickoff.
                 </p>
               </div>
 
@@ -286,9 +281,7 @@ export default function PredictionModal({ match, prediction, open, onClose, onSa
               <p style={{ fontSize: 12, color: '#9b968a', lineHeight: 1.6 }}>
                 {prediction
                   ? 'Ya enviaste tu pronóstico. No se pueden hacer modificaciones.'
-                  : match?.fase === 'grupos'
-                    ? 'Los pronósticos de fase de grupos se cerraron.'
-                    : 'El pronóstico se bloqueó 15 minutos antes del kickoff.'}
+                  : 'El pronóstico se bloqueó 15 minutos antes del kickoff.'}
               </p>
               {prediction && (
                 <div

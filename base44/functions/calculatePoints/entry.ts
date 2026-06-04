@@ -1,6 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// Phase multipliers
 const PHASE_MULTIPLIERS = {
   grupos:        1,
   ronda_32:      1,
@@ -45,36 +44,14 @@ Deno.serve(async (req) => {
     let puntos = 0;
 
     if (realSign === predSign) {
-      // Winner (or draw) correct: 12 pts base, minus 1 pt per goal difference between prediction and result
       const BASE = 12;
-      const predDiff = Math.abs((pl - pv) - (gl - gv));  // goal difference error
-      const scoreDiff = Math.abs(pl - gl) + Math.abs(pv - gv); // total goal error
-      // Penalty: 1 pt per goal of total difference, minimum 1 pt
-      const penalty = scoreDiff;
-      puntos = Math.max(1, BASE - penalty);
-    } else {
-      // Wrong winner = 0 pts
-      puntos = 0;
+      const scoreDiff = Math.abs(pl - gl) + Math.abs(pv - gv);
+      puntos = Math.max(1, BASE - scoreDiff);
     }
 
-    // Apply phase multiplier
     puntos = puntos * multiplier;
 
     await base44.asServiceRole.entities.Prediction.update(pred.id, { puntos_obtenidos: puntos });
-
-    // Recalculate member total
-    const members = await base44.asServiceRole.entities.GroupMember.filter({
-      group_id: pred.group_id,
-      user_id: pred.user_id
-    });
-    if (members.length) {
-      const allPreds = await base44.asServiceRole.entities.Prediction.filter({
-        group_id: pred.group_id,
-        user_id: pred.user_id
-      });
-      const total = allPreds.reduce((sum, p) => sum + (p.puntos_obtenidos || 0), 0);
-      await base44.asServiceRole.entities.GroupMember.update(members[0].id, { puntos_totales: total });
-    }
   }
 
   return Response.json({ success: true, predictions_updated: predictions.length });

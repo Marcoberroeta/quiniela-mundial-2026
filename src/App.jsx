@@ -6,9 +6,6 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Home from './pages/Home';
-import CreateGroup from './pages/CreateGroup';
-import JoinGroup from './pages/JoinGroup';
-import GroupView from './pages/GroupView';
 import MatchDetail from './pages/MatchDetail';
 import Admin from './pages/Admin';
 import Fixture from './pages/Fixture';
@@ -59,11 +56,6 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route element={<AppShell />}>
         <Route path="/" element={<Home />} />
-        <Route path="/groups" element={<Home />} />
-        <Route path="/create-group" element={<CreateGroup />} />
-        <Route path="/join" element={<JoinGroup />} />
-        <Route path="/join/:code" element={<JoinGroup />} />
-        <Route path="/group/:groupId" element={<GroupView />} />
         <Route path="/match/:matchId" element={<MatchDetail />} />
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="admin">
