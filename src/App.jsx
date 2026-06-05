@@ -11,6 +11,9 @@ import Admin from './pages/Admin';
 import Fixture from './pages/Fixture';
 import GlobalLeaderboard from './pages/GlobalLeaderboard';
 import AppShell from './components/AppShell';
+import GroupView from './pages/GroupView';
+import JoinGroup from './pages/JoinGroup';
+import CreateGroup from './pages/CreateGroup';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -64,6 +67,10 @@ const AuthenticatedApp = () => {
         } />
         <Route path="/fixture" element={<Fixture />} />
         <Route path="/ranking" element={<GlobalLeaderboard />} />
+        <Route path="/join" element={<JoinGroup />} />
+        <Route path="/join/:code" element={<JoinGroup />} />
+        <Route path="/group/:groupId" element={<GroupView />} />
+        <Route path="/create-group" element={<CreateGroup />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

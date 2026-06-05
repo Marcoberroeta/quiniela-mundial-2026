@@ -16,8 +16,13 @@ export default function ProfileSetupModal({ user, onComplete }) {
     if (!nombre.trim()) { setError('El nombre es obligatorio.'); return; }
     if (!telefono.trim()) { setError('El teléfono es obligatorio.'); return; }
     setSaving(true);
-    await base44.auth.updateMe({ full_name: nombre.trim(), telefono: telefono.trim() });
-    onComplete();
+    try {
+      await base44.auth.updateMe({ full_name: nombre.trim(), telefono: telefono.trim() });
+      onComplete();
+    } catch (e) {
+      setError('Error al guardar. Intenta de nuevo.');
+      setSaving(false);
+    }
   };
 
   return (

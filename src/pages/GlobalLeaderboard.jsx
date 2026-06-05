@@ -55,8 +55,11 @@ export default function GlobalLeaderboard() {
     members.forEach(m => {
       if (!map[m.user_id]) map[m.user_id] = m.user_nombre || m.user_email || 'Jugador';
     });
+    if (user?.id && (user.full_name || user.email)) {
+      map[user.id] = user.full_name || user.email;
+    }
     return map;
-  }, [members]);
+  }, [members, user]);
 
   return (
     <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>

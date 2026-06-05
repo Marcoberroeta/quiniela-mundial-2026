@@ -138,14 +138,19 @@ export default function Home() {
           </div>
         ) : (
           <div>
-            {upcomingMatches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                prediction={getPrediction(match.id)}
-                onClick={setSelectedMatch}
-              />
-            ))}
+            {upcomingMatches.map((match) => {
+              const pred = getPrediction(match.id);
+              const lockTime = new Date(match.fecha_kickoff);
+              const isLocked = new Date() >= lockTime || !!pred;
+              return (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  prediction={pred}
+                  onClick={isLocked ? undefined : setSelectedMatch}
+                />
+              );
+            })}
           </div>
         )}
       </div>
