@@ -44,7 +44,9 @@ export default function CreateGroup() {
     base44.auth.me().then(u => setUser(u));
   }, []);
 
-  if (user && user.role !== 'admin') {
+  if (!user) return null;
+
+  if (user.role !== 'admin') {
     return (
       <div style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '48px 16px', textAlign: 'center' }}>
         <p style={{ fontSize: 48, marginBottom: 16 }}>🔒</p>

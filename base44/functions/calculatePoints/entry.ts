@@ -54,5 +54,17 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.Prediction.update(pred.id, { puntos_obtenidos: puntos });
   }
 
+  // Refresh GroupMember totals for all affected users
+  const allMembers = await base44.asServiceRole.entities.GroupMember.list('-puntos_totales', 1000);
+  const uniqueUserIds = [...new Set(allMembers.map((m: any) => m.user_id))];
+  for (const userId of uniqueUserIds) {
+    const userPreds = await base44.asServiceRole.entities.Prediction.filter({ user_id: userId });
+    const total = userPreds.reduce((sum: number, p: any) => sum + (p.puntos_obtenidos || 0), 0);
+    const userMembers = allMembers.filter((m: any) => m.user_id === userId);
+    for (const member of userMembers) {
+      await base44.asServiceRole.entities.GroupMember.update(member.id, { puntos_totales: total });
+    }
+  }
+
   return Response.json({ success: true, predictions_updated: predictions.length });
 });
